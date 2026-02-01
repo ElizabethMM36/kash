@@ -1,0 +1,7 @@
+<<<<<<< HEAD
+#include "../../Flutter/Flutter-Debug.xcconfig"
+#include "Warnings.xcconfig"
+=======
+#include "../../Flutter/Flutter-Debug.xcconfig"
+#include "Warnings.xcconfig"
+>>>>>>> e9dd868 (Welcome screen)
