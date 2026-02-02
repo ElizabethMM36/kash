@@ -29,7 +29,7 @@ class _SignUpViewState extends State<SignUpView> {
           child: Column(
             children: [
               Image.asset(
-                "assets/img/app_logo.png",
+                "assets/img/nexo_logo.png",
                 width: media.width * 0.5,
                 fit: BoxFit.contain,
               ),

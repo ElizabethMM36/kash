@@ -17,7 +17,13 @@ class _WelcomeViewState extends State<WelcomeView> {
   @override
   void initState() {
     super.initState();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.leanBack);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: Colors.transparent,
+      ),
+    );
   }
 
   @override
@@ -26,75 +32,120 @@ class _WelcomeViewState extends State<WelcomeView> {
 
     return Scaffold(
       backgroundColor: TColor.primaryBg,
-      body: Stack(
-        alignment: Alignment.topCenter,
-        children: [
-          Image.asset(
-            "assets/img/welcome_screen.png",
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Container(
             width: media.width,
-            height: media.height,
-            fit: BoxFit.cover,
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-              child: Column(
-                children: [
-                  const Spacer(),
+            constraints: BoxConstraints(minHeight: media.height),
+            decoration: const BoxDecoration(
+              color: Color(0xFF1E2A3A),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(height: media.height * 0.15),
 
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                // Logo Image
+                Image.asset(
+                  "assets/img/nexo_logo.png",
+                  width: media.width * 0.5,
+                  fit: BoxFit.contain,
+                ),
+
+                const SizedBox(height: 30),
+
+                // Tagline
+                Text(
+                  "Track your expenses",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: TColor.secondaryText,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+
+                SizedBox(height: media.height * 0.15),
+
+                // Buttons Section
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
                     children: [
-                      Image.asset(
-                        "assets/img/app_logo.png",
-                        width: media.width * 0.5,
-                        fit: BoxFit.contain,
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      Text(
-                        "Track your expenses",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: TColor.white, fontSize: 14),
-                      ),
-
-                      const SizedBox(height: 30),
-
-                      PrimaryButton(
-                        title: "Get started",
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const SocialLoginView(),
+                      // Get Started Button - Teal/Green
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const SocialLoginView(),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: TColor.secondary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          );
-                        },
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            "Get Started",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       ),
 
-                      const SizedBox(height: 15),
+                      const SizedBox(height: 16),
 
-                      SecondaryButton(
-                        title: "I have an account",
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const SignInView(),
+                      // I have an account Button - Outlined
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const SignInView(),
+                              ),
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: BorderSide(
+                              color: TColor.border,
+                              width: 1.5,
                             ),
-                          );
-                        },
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            "I have an account",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
+                ),
 
-                  const Spacer(),
-                ],
-              ),
+                const SizedBox(height: 40),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

@@ -22,9 +22,7 @@ class SecondaryButton extends StatelessWidget {
       child: Container(
         height: 50,
         decoration: BoxDecoration(
-          image: const DecorationImage(
-            image: AssetImage("assets/img/primary_btn.png"),
-          ),
+          color: TColor.secondary,
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
