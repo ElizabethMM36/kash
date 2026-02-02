@@ -4,6 +4,7 @@ import '../../common/color_extension.dart';
 import '../../common_widget/primary_button.dart';
 import '../../common_widget/round_textfield.dart';
 import '../../common_widget/secondary_boutton.dart';
+import '../main_tab/main_tab_view.dart';
 
 class SignInView extends StatefulWidget {
   const SignInView({super.key});
@@ -94,7 +95,16 @@ class _SignInViewState extends State<SignInView> {
 
               const SizedBox(height: 15),
 
-              PrimaryButton(title: "Sign In", onPressed: () {}),
+              PrimaryButton(
+                title: "Sign In",
+                onPressed: () {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const MainTabView()),
+                    (route) => false,
+                  );
+                },
+              ),
 
               const SizedBox(height: 40),
 

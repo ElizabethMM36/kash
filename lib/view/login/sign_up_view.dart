@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kash/common/color_extension.dart';
 import 'package:kash/common_widget/primary_button.dart';
 import 'package:kash/common_widget/round_textfield.dart';
 import 'package:kash/common_widget/secondary_boutton.dart';
 import 'package:kash/view/login/sign_in_view.dart';
 import 'package:kash/view/login/social_login.dart';
+import 'package:kash/view/main_tab/main_tab_view.dart';
 
 class SignUpView extends StatefulWidget {
   const SignUpView({super.key});
@@ -14,6 +16,7 @@ class SignUpView extends StatefulWidget {
 }
 
 class _SignUpViewState extends State<SignUpView> {
+  final TextEditingController txtName = TextEditingController();
   final TextEditingController txtEmail = TextEditingController();
   final TextEditingController txtPassword = TextEditingController();
 
@@ -35,6 +38,12 @@ class _SignUpViewState extends State<SignUpView> {
               ),
 
               const SizedBox(height: 40),
+
+              RoundTextField(
+                title: "Name",
+                controller: txtName,
+              ),
+              const SizedBox(height: 15),
 
               RoundTextField(
                 title: "E-mail address",
@@ -74,7 +83,29 @@ class _SignUpViewState extends State<SignUpView> {
 
               const SizedBox(height: 25),
 
-              PrimaryButton(title: "Get started", onPressed: () {}),
+              PrimaryButton(
+                title: "Get started",
+                onPressed: () async {
+                  if (txtName.text.isEmpty) {
+                     ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Please enter your name")),
+                      );
+                      return;
+                  }
+
+                  // Save user name
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setString('user_name', txtName.text);
+
+                  if (context.mounted) {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => const MainTabView()),
+                      (route) => false,
+                    );
+                  }
+                },
+              ),
 
               const SizedBox(height: 30),
 
