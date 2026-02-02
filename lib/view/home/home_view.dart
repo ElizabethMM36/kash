@@ -237,22 +237,9 @@ class _HomeViewState extends State<HomeView> {
                   ),
                   const SizedBox(height: 25),
 
-                  // Quick Actions
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildQuickAction(
-                        icon: Icons.add_circle_outline_rounded,
-                        title: "Add Income",
-                         onTap: () {
-                           showModalBottomSheet(
-                              context: context,
-                              backgroundColor: Colors.transparent,
-                              isScrollControlled: true,
-                              builder: (context) => const AddTransactionView(),
-                            );
-                         },
-                      ),
                        _buildQuickAction(
                         icon: Icons.remove_circle_outline_rounded,
                         title: "Add Expense",
