@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kash/common/color_extension.dart';
 import 'package:kash/view/main_tab/main_tab_view.dart';
 import 'package:kash/view/add_transaction/add_transaction_view.dart';
+import 'package:kash/view/split_expense/split_expense_view.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -264,12 +265,24 @@ class _HomeViewState extends State<HomeView> {
                             );
                          },
                       ),
-                       _buildQuickAction(
+                      _buildQuickAction(
                         icon: Icons.edit_note_rounded,
                         title: "Edit Budget",
                          onTap: () {
                            // Ideally switch to Budget Tab (Index 2)
                            // For now, doing nothing or we can push the view
+                         },
+                      ),
+                      _buildQuickAction(
+                        icon: Icons.call_split_rounded,
+                        title: "Split",
+                         onTap: () {
+                           showModalBottomSheet(
+                              context: context,
+                              backgroundColor: Colors.transparent,
+                              isScrollControlled: true,
+                              builder: (context) => const SplitExpenseView(initialData: {}),
+                            );
                          },
                       ),
                     ],
