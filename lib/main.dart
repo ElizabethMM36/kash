@@ -20,7 +20,6 @@ class MyApp extends StatelessWidget {
         // Use ONLY one colorScheme
         colorScheme: ColorScheme.fromSeed(
           seedColor: TColor.primary,
-          background: TColor.gray20,
           primaryContainer: TColor.gray10,
           onPrimaryContainer: TColor.gray10,
           secondaryContainer: TColor.gray10,
