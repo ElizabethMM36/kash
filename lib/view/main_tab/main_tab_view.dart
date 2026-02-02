@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kash/common/color_extension.dart';
 import 'package:kash/view/add_transaction/add_transaction_view.dart';
+import 'package:kash/view/add_income/add_income_view.dart';
 import 'package:kash/view/analytics/analytics_view.dart';
 import 'package:kash/view/budget/budget_view.dart';
 import 'package:kash/view/expense/expense_view.dart';
@@ -75,13 +76,13 @@ class _MainTabViewState extends State<MainTabView> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Open Add Transaction Modal
+          // Open Add Income Modal
           showModalBottomSheet(
             context: context,
             backgroundColor: Colors.transparent,
             isScrollControlled: true,
             builder: (context) {
-              return const AddTransactionView();
+              return const AddIncomeView();
             },
           );
         },
