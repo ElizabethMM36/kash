@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kash/common/color_extension.dart';
-import 'package:kash/view/main_tab/main_tab_view.dart';
 import 'package:kash/view/add_transaction/add_transaction_view.dart';
 import 'package:kash/view/split_expense/split_expense_view.dart';
 
@@ -36,7 +35,7 @@ class _HomeViewState extends State<HomeView> {
       "category": "Entertainment",
       "amount": "-\$15.00",
       "isIncome": false,
-      "color": Colors.red
+      "color": Colors.red,
     },
     {
       "name": "Salary",
@@ -44,7 +43,7 @@ class _HomeViewState extends State<HomeView> {
       "category": "Income",
       "amount": "+\$3,500.00",
       "isIncome": true,
-      "color": Colors.green
+      "color": Colors.green,
     },
     {
       "name": "Grocery Shopping",
@@ -52,7 +51,7 @@ class _HomeViewState extends State<HomeView> {
       "category": "Food",
       "amount": "-\$85.50",
       "isIncome": false,
-      "color": Colors.orange
+      "color": Colors.orange,
     },
     {
       "name": "Electric Bill",
@@ -60,7 +59,7 @@ class _HomeViewState extends State<HomeView> {
       "category": "Bills",
       "amount": "-\$120.00",
       "isIncome": false,
-      "color": Colors.blue
+      "color": Colors.blue,
     },
   ];
 
@@ -74,7 +73,12 @@ class _HomeViewState extends State<HomeView> {
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.only(top: 50, bottom: 15, left: 20, right: 20),
+              padding: const EdgeInsets.only(
+                top: 50,
+                bottom: 15,
+                left: 20,
+                right: 20,
+              ),
               decoration: BoxDecoration(
                 color: TColor.gray80,
                 borderRadius: const BorderRadius.only(
@@ -85,7 +89,7 @@ class _HomeViewState extends State<HomeView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                   Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
@@ -93,7 +97,10 @@ class _HomeViewState extends State<HomeView> {
                         children: [
                           Text(
                             "Welcome back,",
-                            style: TextStyle(color: TColor.gray30, fontSize: 12),
+                            style: TextStyle(
+                              color: TColor.gray30,
+                              fontSize: 12,
+                            ),
                           ),
                           Text(
                             userName,
@@ -113,8 +120,12 @@ class _HomeViewState extends State<HomeView> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         alignment: Alignment.center,
-                        child: Icon(Icons.person, color: TColor.white, size: 20),
-                      )
+                        child: Icon(
+                          Icons.person,
+                          color: TColor.white,
+                          size: 20,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 25),
@@ -144,14 +155,18 @@ class _HomeViewState extends State<HomeView> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Image.asset("assets/img/nexo_logo.png", height: 30, fit: BoxFit.contain),
+                            Image.asset(
+                              "assets/img/nexo_logo.png",
+                              height: 30,
+                              fit: BoxFit.contain,
+                            ),
                             Text(
                               "VISA",
                               style: TextStyle(
                                 color: TColor.white,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                fontStyle: FontStyle.italic
+                                fontStyle: FontStyle.italic,
                               ),
                             ),
                           ],
@@ -166,72 +181,74 @@ class _HomeViewState extends State<HomeView> {
                             letterSpacing: 1.0,
                           ),
                         ),
-                         const SizedBox(height: 5),
-                         Text(
+                        const SizedBox(height: 5),
+                        Text(
                           "**** **** **** 3456",
                           style: TextStyle(
                             color: TColor.primary500,
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
-                            letterSpacing: 2.0
+                            letterSpacing: 2.0,
                           ),
                         ),
-                         const SizedBox(height: 20),
+                        const SizedBox(height: 20),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                             Column(
-                               crossAxisAlignment: CrossAxisAlignment.start,
-                               children: [
-                                 Text(
-                                    "Balance",
-                                    style: TextStyle(
-                                      color: TColor.primary500.withOpacity(0.7),
-                                      fontSize: 12,
-                                    ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Balance",
+                                  style: TextStyle(
+                                    color: TColor.primary500.withOpacity(0.7),
+                                    fontSize: 12,
                                   ),
-                                  Text(
-                                    "\$ 12,480.00",
-                                    style: TextStyle(
-                                      color: TColor.primary500,
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                ),
+                                Text(
+                                  "\$ 12,480.00",
+                                  style: TextStyle(
+                                    color: TColor.primary500,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
                                   ),
-                               ],
-                             ),
-                              Column(
-                               crossAxisAlignment: CrossAxisAlignment.end,
-                               children: [
-                                 Text(
-                                    "Monthly Limit",
-                                    style: TextStyle(
-                                      color: TColor.primary500.withOpacity(0.7),
-                                      fontSize: 12,
-                                    ),
+                                ),
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  "Monthly Limit",
+                                  style: TextStyle(
+                                    color: TColor.primary500.withOpacity(0.7),
+                                    fontSize: 12,
                                   ),
-                                  Text(
-                                    "\$ 5,000 / \$ 10,000",
-                                    style: TextStyle(
-                                      color: TColor.primary500,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                ),
+                                Text(
+                                  "\$ 5,000 / \$ 10,000",
+                                  style: TextStyle(
+                                    color: TColor.primary500,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
                                   ),
-                               ],
-                             ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                         const SizedBox(height: 10),
-                         ClipRRect(
+                        ClipRRect(
                           borderRadius: BorderRadius.circular(2),
-                           child: LinearProgressIndicator(
-                             value: 0.5,
-                             minHeight: 4,
-                             backgroundColor: TColor.white.withOpacity(0.3),
-                             valueColor: AlwaysStoppedAnimation(TColor.primary500),
-                           ),
-                         )
+                          child: LinearProgressIndicator(
+                            value: 0.5,
+                            minHeight: 4,
+                            backgroundColor: TColor.white.withOpacity(0.3),
+                            valueColor: AlwaysStoppedAnimation(
+                              TColor.primary500,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -240,44 +257,45 @@ class _HomeViewState extends State<HomeView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                       _buildQuickAction(
+                      _buildQuickAction(
                         icon: Icons.remove_circle_outline_rounded,
                         title: "Add Expense",
-                         onTap: () {
-                           showModalBottomSheet(
-                              context: context,
-                              backgroundColor: Colors.transparent,
-                              isScrollControlled: true,
-                              builder: (context) => const AddTransactionView(),
-                            );
-                         },
+                        onTap: () {
+                          showModalBottomSheet(
+                            context: context,
+                            backgroundColor: Colors.transparent,
+                            isScrollControlled: true,
+                            builder: (context) => const AddTransactionView(),
+                          );
+                        },
                       ),
                       _buildQuickAction(
                         icon: Icons.edit_note_rounded,
                         title: "Edit Budget",
-                         onTap: () {
-                           // Ideally switch to Budget Tab (Index 2)
-                           // For now, doing nothing or we can push the view
-                         },
+                        onTap: () {
+                          // Ideally switch to Budget Tab (Index 2)
+                          // For now, doing nothing or we can push the view
+                        },
                       ),
                       _buildQuickAction(
                         icon: Icons.call_split_rounded,
                         title: "Split",
-                         onTap: () {
-                           showModalBottomSheet(
-                              context: context,
-                              backgroundColor: Colors.transparent,
-                              isScrollControlled: true,
-                              builder: (context) => const SplitExpenseView(initialData: {}),
-                            );
-                         },
+                        onTap: () {
+                          showModalBottomSheet(
+                            context: context,
+                            backgroundColor: Colors.transparent,
+                            isScrollControlled: true,
+                            builder: (context) =>
+                                const SplitExpenseView(initialData: {}),
+                          );
+                        },
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
 
             // Expense Log Preview
@@ -300,7 +318,7 @@ class _HomeViewState extends State<HomeView> {
                       "See all",
                       style: TextStyle(color: TColor.gray30, fontSize: 14),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -330,7 +348,7 @@ class _HomeViewState extends State<HomeView> {
                         ),
                         alignment: Alignment.center,
                         child: Icon(
-                          Icons.shopping_bag_outlined, 
+                          Icons.shopping_bag_outlined,
                           color: tObj["color"],
                         ),
                       ),
@@ -349,7 +367,10 @@ class _HomeViewState extends State<HomeView> {
                             ),
                             Text(
                               "${tObj["category"]} • ${tObj["date"]}",
-                              style: TextStyle(color: TColor.gray30, fontSize: 12),
+                              style: TextStyle(
+                                color: TColor.gray30,
+                                fontSize: 12,
+                              ),
                             ),
                           ],
                         ),
@@ -357,7 +378,9 @@ class _HomeViewState extends State<HomeView> {
                       Text(
                         tObj["amount"],
                         style: TextStyle(
-                          color: tObj["isIncome"] ? Colors.greenAccent : TColor.white,
+                          color: tObj["isIncome"]
+                              ? Colors.greenAccent
+                              : TColor.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -374,7 +397,11 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  Widget _buildQuickAction({required IconData icon, required String title, required VoidCallback onTap}) {
+  Widget _buildQuickAction({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       child: Column(
@@ -384,12 +411,19 @@ class _HomeViewState extends State<HomeView> {
             decoration: BoxDecoration(
               color: TColor.gray70,
               borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: TColor.border.withOpacity(0.5))
+              border: Border.all(color: TColor.border.withOpacity(0.5)),
             ),
             child: Icon(icon, color: TColor.secondary, size: 24),
           ),
           const SizedBox(height: 8),
-          Text(title, style: TextStyle(color: TColor.gray30, fontSize: 12, fontWeight: FontWeight.w500))
+          Text(
+            title,
+            style: TextStyle(
+              color: TColor.gray30,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );

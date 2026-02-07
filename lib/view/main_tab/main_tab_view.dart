@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:kash/common/color_extension.dart';
-import 'package:kash/view/add_transaction/add_transaction_view.dart';
 import 'package:kash/view/add_income/add_income_view.dart';
 import 'package:kash/view/analytics/analytics_view.dart';
 import 'package:kash/view/budget/budget_view.dart';

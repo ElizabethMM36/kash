@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kash/common/color_extension.dart';
-import 'package:kash/common_widget/primary_button.dart';
 import 'package:kash/view/login/sign_in_view.dart';
 import 'package:kash/view/login/social_login.dart';
-import '../../common_widget/secondary_boutton.dart';
 
 class WelcomeView extends StatefulWidget {
   const WelcomeView({super.key});
@@ -37,9 +35,7 @@ class _WelcomeViewState extends State<WelcomeView> {
           child: Container(
             width: media.width,
             constraints: BoxConstraints(minHeight: media.height),
-            decoration: const BoxDecoration(
-              color: Color(0xFF1E2A3A),
-            ),
+            decoration: const BoxDecoration(color: Color(0xFF1E2A3A)),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -120,10 +116,7 @@ class _WelcomeViewState extends State<WelcomeView> {
                           },
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
-                            side: BorderSide(
-                              color: TColor.border,
-                              width: 1.5,
-                            ),
+                            side: BorderSide(color: TColor.border, width: 1.5),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),

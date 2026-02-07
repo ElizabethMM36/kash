@@ -39,10 +39,7 @@ class _SignUpViewState extends State<SignUpView> {
 
               const SizedBox(height: 40),
 
-              RoundTextField(
-                title: "Name",
-                controller: txtName,
-              ),
+              RoundTextField(title: "Name", controller: txtName),
               const SizedBox(height: 15),
 
               RoundTextField(
@@ -66,7 +63,9 @@ class _SignUpViewState extends State<SignUpView> {
                     child: Container(
                       height: 5,
                       margin: const EdgeInsets.symmetric(horizontal: 2),
-                      decoration: BoxDecoration(color: TColor.secondaryYellow),
+                      decoration: BoxDecoration(
+                        color: const Color.fromARGB(255, 23, 208, 63),
+                      ),
                     ),
                   ),
                 ),
@@ -87,10 +86,10 @@ class _SignUpViewState extends State<SignUpView> {
                 title: "Get started",
                 onPressed: () async {
                   if (txtName.text.isEmpty) {
-                     ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Please enter your name")),
-                      );
-                      return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Please enter your name")),
+                    );
+                    return;
                   }
 
                   // Save user name

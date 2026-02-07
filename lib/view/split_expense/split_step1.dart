@@ -13,7 +13,11 @@ class SplitStep1 extends StatefulWidget {
 class _SplitStep1State extends State<SplitStep1> {
   // Who paid?
   String payer = "You";
-  List<String> possiblePayers = ["You", "Alex", "Sam"]; // Example: Should be dynamic
+  List<String> possiblePayers = [
+    "You",
+    "Alex",
+    "Sam",
+  ]; // Example: Should be dynamic
 
   // With whom?
   List<String> potentialSplitters = ["Alex", "Sam", "Jordan", "Taylor"];
@@ -29,41 +33,54 @@ class _SplitStep1State extends State<SplitStep1> {
         children: [
           Row(
             children: [
-               IconButton(onPressed: widget.onBack, icon: Icon(Icons.arrow_back, color: TColor.white)),
-               const SizedBox(width: 8),
-               Expanded(
-                 child: Text(
+              IconButton(
+                onPressed: widget.onBack,
+                icon: Icon(Icons.arrow_back, color: TColor.white),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
                   "Who paid & With whom?",
                   style: TextStyle(
                     color: TColor.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
-                             ),
-               ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 25),
 
           // 1. Who paid?
-          Text("Who paid for this expense?", style: TextStyle(color: TColor.gray30, fontSize: 14)),
+          Text(
+            "Who paid for this expense?",
+            style: TextStyle(color: TColor.gray30, fontSize: 14),
+          ),
           const SizedBox(height: 10),
           Wrap(
             spacing: 10,
             runSpacing: 10,
-            children: possiblePayers.map((s) => _buildChoiceChip(s, payer, (val) {
-              setState(() {
-                payer = val;
-              });
-            })).toList(),
+            children: possiblePayers
+                .map(
+                  (s) => _buildChoiceChip(s, payer, (val) {
+                    setState(() {
+                      payer = val;
+                    });
+                  }),
+                )
+                .toList(),
           ),
-          
+
           const SizedBox(height: 25),
           // 2. With whom?
-          Text("Split with?", style: TextStyle(color: TColor.gray30, fontSize: 14)),
+          Text(
+            "Split with?",
+            style: TextStyle(color: TColor.gray30, fontSize: 14),
+          ),
           const SizedBox(height: 10),
-          ...potentialSplitters.map((s) => _buildCheckboxRow(s)).toList(),
-          
+          ...potentialSplitters.map((s) => _buildCheckboxRow(s)),
+
           // Add new person
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -74,25 +91,27 @@ class _SplitStep1State extends State<SplitStep1> {
                     controller: newPersonController,
                     style: TextStyle(color: TColor.white),
                     decoration: InputDecoration(
-                       hintText: "Add new person (+ Name)",
-                       hintStyle: TextStyle(color: TColor.gray50),
-                       isDense: true,
-                       enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: TColor.gray60)),
+                      hintText: "Add new person (+ Name)",
+                      hintStyle: TextStyle(color: TColor.gray50),
+                      isDense: true,
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: TColor.gray60),
+                      ),
                     ),
                   ),
                 ),
                 IconButton(
                   icon: Icon(Icons.add_circle, color: TColor.secondary),
                   onPressed: () {
-                    if(newPersonController.text.isNotEmpty) {
+                    if (newPersonController.text.isNotEmpty) {
                       setState(() {
-                         potentialSplitters.add(newPersonController.text);
-                         selectedSplitters.add(newPersonController.text);
-                         newPersonController.clear();
+                        potentialSplitters.add(newPersonController.text);
+                        selectedSplitters.add(newPersonController.text);
+                        newPersonController.clear();
                       });
                     }
                   },
-                )
+                ),
               ],
             ),
           ),
@@ -109,15 +128,26 @@ class _SplitStep1State extends State<SplitStep1> {
                   borderRadius: BorderRadius.circular(25),
                 ),
               ),
-              child: Text("Next", style: TextStyle(color: TColor.primary, fontWeight: FontWeight.bold, fontSize: 16)),
+              child: Text(
+                "Next",
+                style: TextStyle(
+                  color: TColor.primary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildChoiceChip(String label, String currentSelection, Function(String) onSelect) {
+  Widget _buildChoiceChip(
+    String label,
+    String currentSelection,
+    Function(String) onSelect,
+  ) {
     bool isSelected = label == currentSelection;
     return InkWell(
       onTap: () => onSelect(label),
@@ -145,7 +175,7 @@ class _SplitStep1State extends State<SplitStep1> {
     return InkWell(
       onTap: () {
         setState(() {
-          if(isSelected) {
+          if (isSelected) {
             selectedSplitters.remove(name);
           } else {
             selectedSplitters.add(name);
