@@ -7,7 +7,7 @@ import 'package:kash/common_widget/secondary_boutton.dart';
 import 'package:kash/view/login/sign_in_view.dart';
 import 'package:kash/view/login/social_login.dart';
 import 'package:kash/view/main_tab/main_tab_view.dart';
-
+import 'package:kash/services/user_service.dart';
 import 'package:kash/firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -99,15 +99,24 @@ class _SignUpViewState extends State<SignUpView> {
 
                   try {
                     // Create user
-                    UserCredential userCredential = await FirebaseAuth.instance
+                    UserCredential credential = await FirebaseAuth.instance
                         .createUserWithEmailAndPassword(
                           email: txtEmail.text.trim(),
                           password: txtPassword.text.trim(),
                         );
                     // Save the display name
-                    await userCredential.user!.updateDisplayName(
-                      txtName.text.trim(),
+                    final user = credential.user!;
+                    final uid = user.uid;
+                    await user.updateDisplayName(txtName.text.trim());
+                    // Save the name to firestore
+                    final service = UserService();
+                    await service.createUserProfile(
+                      uid: uid,
+                      name: txtName.text.trim(),
+                      email: txtEmail.text.trim(),
                     );
+                    await service.createDefaultBudgets(uid);
+
                     // Navigate
                     if (context.mounted) {
                       Navigator.pushAndRemoveUntil(

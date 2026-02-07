@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kash/common/color_extension.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:kash/view/login/welcome_view.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -12,7 +13,9 @@ class ProfileView extends StatefulWidget {
 }
 
 class _ProfileViewState extends State<ProfileView> {
-  String userName = "Baby Mumthas";
+  late String userName = '';
+  late String userEmail = '';
+  
   Future<void> logout(BuildContext context) async {
     try {
       // 1.Sign out from Firebase
@@ -43,10 +46,19 @@ class _ProfileViewState extends State<ProfileView> {
   }
 
   void loadUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      userName = prefs.getString('user_name') ?? "Baby Mumthas";
-    });
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+    if (doc.exists) {
+      setState(() {
+        String userName = doc['name'];
+        userEmail = doc['email'];
+      });
+    }
   }
 
   @override
@@ -88,7 +100,7 @@ class _ProfileViewState extends State<ProfileView> {
                     ),
                   ),
                   Text(
-                    "baby.mumthas@example.com",
+                    userEmail,
                     style: TextStyle(color: TColor.gray30, fontSize: 14),
                   ),
                   const SizedBox(height: 20),

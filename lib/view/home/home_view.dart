@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kash/common/color_extension.dart';
 import 'package:kash/view/add_transaction/add_transaction_view.dart';
 import 'package:kash/view/split_expense/split_expense_view.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -12,19 +13,28 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
-  String userName = "Baby Mumthas";
+  String userName = "Loading...";
+  void loadUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    if (doc.exists) {
+      setState(() {
+        userName = doc['name'];
+      });
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     loadUserData();
-  }
-
-  void loadUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      userName = prefs.getString('user_name') ?? "Baby Mumthas";
-    });
   }
 
   // Dummy data for recent transactions
