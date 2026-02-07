@@ -22,11 +22,11 @@ class PrimaryButton extends StatelessWidget {
       child: Container(
         height: 50,
         decoration: BoxDecoration(
-          color: TColor.secondaryYellow,
+          color: const Color.fromARGB(255, 85, 204, 38),
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: TColor.secondaryYellow.withOpacity(0.25),
+              color: const Color.fromARGB(255, 17, 175, 25).withOpacity(0.25),
               blurRadius: 10,
               offset: const Offset(0, 7),
             ),
@@ -36,7 +36,7 @@ class PrimaryButton extends StatelessWidget {
         child: Text(
           title,
           style: TextStyle(
-            color: TColor.gray,
+            color: TColor.white,
             fontSize: fontSize,
             fontWeight: fontWeight,
           ),

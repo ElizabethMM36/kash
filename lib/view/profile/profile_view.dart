@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kash/common/color_extension.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:kash/view/login/welcome_view.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -11,6 +13,28 @@ class ProfileView extends StatefulWidget {
 
 class _ProfileViewState extends State<ProfileView> {
   String userName = "Baby Mumthas";
+  Future<void> logout(BuildContext context) async {
+    try {
+      // 1.Sign out from Firebase
+      await FirebaseAuth.instance.signOut();
+      // 2. Clear SharePreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      // 3.Navigate to Welcome Screen
+      if (context.mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const WelcomeView()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      // Handle error
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error logging out: $e")));
+    }
+  }
 
   @override
   void initState() {
@@ -65,30 +89,33 @@ class _ProfileViewState extends State<ProfileView> {
                   ),
                   Text(
                     "baby.mumthas@example.com",
-                    style: TextStyle(
-                      color: TColor.gray30,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: TColor.gray30, fontSize: 14),
                   ),
                   const SizedBox(height: 20),
                   InkWell(
                     onTap: () {},
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         color: TColor.secondary,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         "Edit Profile",
-                        style: TextStyle(color: TColor.white, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: TColor.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
 
             _buildSettingTile(
@@ -96,21 +123,21 @@ class _ProfileViewState extends State<ProfileView> {
               icon: Icons.settings_outlined,
               onTap: () {},
             ),
-             _buildSettingTile(
+            _buildSettingTile(
               title: "Currency",
               icon: Icons.currency_exchange_rounded,
               onTap: () {},
             ),
-             _buildSettingTile(
+            _buildSettingTile(
               title: "Export Data",
               icon: Icons.file_upload_outlined,
               onTap: () {},
             ),
-             _buildSettingTile(
+            _buildSettingTile(
               title: "Log Out",
               icon: Icons.logout_rounded,
               onTap: () {
-                // Navigate back to Welcome/Login
+                logout(context);
               },
               isDestructive: true,
             ),
@@ -120,7 +147,12 @@ class _ProfileViewState extends State<ProfileView> {
     );
   }
 
-  Widget _buildSettingTile({required String title, required IconData icon, required VoidCallback onTap, bool isDestructive = false}) {
+  Widget _buildSettingTile({
+    required String title,
+    required IconData icon,
+    required VoidCallback onTap,
+    bool isDestructive = false,
+  }) {
     return ListTile(
       onTap: onTap,
       leading: Container(
@@ -131,7 +163,11 @@ class _ProfileViewState extends State<ProfileView> {
           borderRadius: BorderRadius.circular(10),
         ),
         alignment: Alignment.center,
-        child: Icon(icon, color: isDestructive ? Colors.red : TColor.white, size: 20),
+        child: Icon(
+          icon,
+          color: isDestructive ? Colors.red : TColor.white,
+          size: 20,
+        ),
       ),
       title: Text(
         title,
@@ -141,7 +177,13 @@ class _ProfileViewState extends State<ProfileView> {
           fontWeight: FontWeight.w500,
         ),
       ),
-      trailing: isDestructive ? null : Icon(Icons.arrow_forward_ios_rounded, color: TColor.gray30, size: 16),
+      trailing: isDestructive
+          ? null
+          : Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: TColor.gray30,
+              size: 16,
+            ),
     );
   }
 }

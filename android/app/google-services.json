@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "473471001061",
+    "project_id": "kash-4441d",
+    "storage_bucket": "kash-4441d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:473471001061:android:9e34c4366456fd72f54f0c",
+        "android_client_info": {
+          "package_name": "com.example.kash"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCypn8YJ2uUOphxgt8HGEhm0BE9JQU_NCc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

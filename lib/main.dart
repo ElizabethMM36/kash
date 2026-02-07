@@ -1,8 +1,15 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:kash/common/color_extension.dart';
 import 'package:kash/view/login/welcome_view.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:kash/view/main_tab/main_tab_view.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   runApp(const MyApp());
 }
 
@@ -28,7 +35,9 @@ class MyApp extends StatelessWidget {
 
         // Make sure this font exists in pubspec.yaml
       ),
-      home: const WelcomeView(),
+      home: FirebaseAuth.instance.currentUser == null
+          ? const WelcomeView()
+          : const MainTabView(),
     );
   }
 }
@@ -49,11 +58,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _incrementCounter() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
       _counter++;
     });
   }

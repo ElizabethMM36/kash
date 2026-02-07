@@ -5,6 +5,7 @@ import '../../common_widget/primary_button.dart';
 import '../../common_widget/round_textfield.dart';
 import '../../common_widget/secondary_boutton.dart';
 import '../main_tab/main_tab_view.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SignInView extends StatefulWidget {
   const SignInView({super.key});
@@ -67,13 +68,13 @@ class _SignInViewState extends State<SignInView> {
                               ? Icons.check_box_rounded
                               : Icons.check_box_outline_blank_rounded,
                           size: 25,
-                          color: TColor.secondaryYellow,
+                          color: const Color.fromARGB(255, 245, 245, 245),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           "Remember me",
                           style: TextStyle(
-                            color: TColor.secondaryYellow,
+                            color: const Color.fromARGB(255, 224, 222, 213),
                             fontSize: 14,
                           ),
                         ),
@@ -85,7 +86,7 @@ class _SignInViewState extends State<SignInView> {
                     child: Text(
                       "Forgot password",
                       style: TextStyle(
-                        color: TColor.secondaryYellow,
+                        color: const Color.fromARGB(255, 229, 228, 222),
                         fontSize: 14,
                       ),
                     ),
@@ -97,12 +98,32 @@ class _SignInViewState extends State<SignInView> {
 
               PrimaryButton(
                 title: "Sign In",
-                onPressed: () {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const MainTabView()),
-                    (route) => false,
-                  );
+                onPressed: () async {
+                  if (txtEmail.text.isEmpty || txtPassword.text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Please fill in all fields"),
+                      ),
+                    );
+                    return;
+                  }
+                  try {
+                    await FirebaseAuth.instance.signInWithEmailAndPassword(
+                      email: txtEmail.text.trim(),
+                      password: txtPassword.text.trim(),
+                    );
+                    if (context.mounted) {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (_) => const MainTabView()),
+                        (route) => false,
+                      );
+                    }
+                  } on FirebaseAuthException catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(e.message ?? "An error occurred")),
+                    );
+                  }
                 },
               ),
 

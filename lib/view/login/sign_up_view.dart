@@ -8,6 +8,9 @@ import 'package:kash/view/login/sign_in_view.dart';
 import 'package:kash/view/login/social_login.dart';
 import 'package:kash/view/main_tab/main_tab_view.dart';
 
+import 'package:kash/firebase_options.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 class SignUpView extends StatefulWidget {
   const SignUpView({super.key});
 
@@ -64,7 +67,7 @@ class _SignUpViewState extends State<SignUpView> {
                       height: 5,
                       margin: const EdgeInsets.symmetric(horizontal: 2),
                       decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 23, 208, 63),
+                        color: const Color.fromARGB(255, 85, 207, 112),
                       ),
                     ),
                   ),
@@ -85,22 +88,37 @@ class _SignUpViewState extends State<SignUpView> {
               PrimaryButton(
                 title: "Get started",
                 onPressed: () async {
-                  if (txtName.text.isEmpty) {
+                  if (txtName.text.isEmpty ||
+                      txtEmail.text.isEmpty ||
+                      txtPassword.text.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Please enter your name")),
+                      const SnackBar(content: Text("All fields required")),
                     );
                     return;
                   }
 
-                  // Save user name
-                  final prefs = await SharedPreferences.getInstance();
-                  await prefs.setString('user_name', txtName.text);
-
-                  if (context.mounted) {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (_) => const MainTabView()),
-                      (route) => false,
+                  try {
+                    // Create user
+                    UserCredential userCredential = await FirebaseAuth.instance
+                        .createUserWithEmailAndPassword(
+                          email: txtEmail.text.trim(),
+                          password: txtPassword.text.trim(),
+                        );
+                    // Save the display name
+                    await userCredential.user!.updateDisplayName(
+                      txtName.text.trim(),
+                    );
+                    // Navigate
+                    if (context.mounted) {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (context) => MainTabView()),
+                        (route) => false,
+                      );
+                    }
+                  } on FirebaseAuthException catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(e.message ?? "Sign up failed")),
                     );
                   }
                 },
