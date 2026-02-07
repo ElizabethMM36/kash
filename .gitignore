@@ -22,7 +22,7 @@ linux/flutter/ephemeral/
 
 # Firebase
 .firebase/
-.firebase.json
+
 
 # OS
 .DS_Store
