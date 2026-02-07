@@ -3,6 +3,8 @@
 .packages
 .pub/
 build/
+.flutter-plugins
+.flutter-plugins-dependencies
 
 # IDE
 .vscode/
@@ -12,17 +14,21 @@ build/
 # Platform builds
 android/.gradle/
 android/local.properties
+
 ios/Pods/
 ios/.symlinks/
 ios/Flutter/Generated.xcconfig
 ios/Flutter/Flutter.podspec
+
 macos/Flutter/GeneratedPluginRegistrant.swift
 windows/flutter/ephemeral/
 linux/flutter/ephemeral/
 
-# Firebase
+# Firebase (local cache only)
 .firebase/
 
+# Environment / secrets
+.env
 
 # OS
 .DS_Store
