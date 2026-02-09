@@ -49,6 +49,8 @@ class RoundTextField extends StatelessWidget {
               errorBorder: InputBorder.none,
               enabledBorder: InputBorder.none,
             ),
+            style: TextStyle(color: TColor.white),
+            cursorColor: TColor.white,
             keyboardType: keyboardType,
             obscureText: obscureText,
           ),
