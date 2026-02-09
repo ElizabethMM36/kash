@@ -28,7 +28,7 @@ class UserService {
     });
   }
 
-  /// Create default budgets
+  /// Create default budgets (12 categories totaling 100%)
   Future<void> createDefaultBudgets(String uid) async {
     final budgetRef = _db.collection('users').doc(uid).collection('budgets');
 
@@ -37,24 +37,35 @@ class UserService {
 
     if (snapshot.docs.isNotEmpty) return;
 
-    final budgets = [
-      {'category': 'Food', 'percentage': 30},
-      {'category': 'Rent', 'percentage': 25},
-      {'category': 'Transport', 'percentage': 10},
-      {'category': 'Savings', 'percentage': 20},
-      {'category': 'Others', 'percentage': 15},
+    final defaultBudgets = [
+      {'category': 'Rent/Housing', 'percentage': 25, 'colorValue': 0xFF6C5CE7},
+      {'category': 'Groceries', 'percentage': 12, 'colorValue': 0xFF00B894},
+      {'category': 'Transport', 'percentage': 10, 'colorValue': 0xFF0984E3},
+      {'category': 'Utilities', 'percentage': 5, 'colorValue': 0xFFFDCB6E},
+      {'category': 'Healthcare', 'percentage': 5, 'colorValue': 0xFFE17055},
+      {'category': 'Dining Out', 'percentage': 5, 'colorValue': 0xFFE84393},
+      {'category': 'Entertainment', 'percentage': 5, 'colorValue': 0xFFA29BFE},
+      {'category': 'Shopping', 'percentage': 5, 'colorValue': 0xFF74B9FF},
+      {'category': 'Subscriptions', 'percentage': 3, 'colorValue': 0xFFFF7675},
+      {'category': 'Personal Care', 'percentage': 3, 'colorValue': 0xFF55EFC4},
+      {'category': 'Savings', 'percentage': 15, 'colorValue': 0xFF00CEC9},
+      {'category': 'Others', 'percentage': 7, 'colorValue': 0xFF636E72},
     ];
 
-    for (var b in budgets) {
-      await budgetRef.doc(b['category'] as String).set({
-        'category': b['category'],
-        'percentage': b['percentage'],
+    final batch = _db.batch();
 
-        'limit': 0,
-        'spent': 0,
-
+    for (var budget in defaultBudgets) {
+      final docRef = budgetRef.doc(budget['category'] as String);
+      batch.set(docRef, {
+        'category': budget['category'],
+        'percentage': budget['percentage'],
+        'colorValue': budget['colorValue'],
+        'spent': 0.0,
+        'isDefault': true,
         'updatedAt': Timestamp.now(),
       });
     }
+
+    await batch.commit();
   }
 }
