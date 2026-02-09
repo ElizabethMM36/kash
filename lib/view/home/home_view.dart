@@ -15,6 +15,8 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   String userName = "Loading...";
+  double monthlyIncome = 0;
+  double totalExpenses = 0;
   final TransactionService _transactionService = TransactionService();
 
   void loadUserData() async {
@@ -29,9 +31,98 @@ class _HomeViewState extends State<HomeView> {
 
     if (doc.exists) {
       setState(() {
-        userName = doc['name'];
+        userName = doc['name'] ?? 'User';
+        monthlyIncome = (doc['monthlyIncome'] ?? 0).toDouble();
       });
     }
+
+    // Calculate total expenses
+    _loadTotalExpenses();
+  }
+
+  void _loadTotalExpenses() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('transactions')
+        .get();
+
+    double total = 0;
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+      final amount = (data['amount'] ?? 0).toDouble();
+      final isIncome = data['isIncome'] ?? false;
+      if (!isIncome) {
+        total += amount;
+      }
+    }
+
+    setState(() {
+      totalExpenses = total;
+    });
+  }
+
+  void _showSetBalanceDialog() {
+    final TextEditingController balanceController = TextEditingController(
+      text: monthlyIncome > 0 ? monthlyIncome.toStringAsFixed(0) : '',
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: TColor.gray80,
+        title: Text(
+          'Set Your Balance',
+          style: TextStyle(color: TColor.white),
+        ),
+        content: TextField(
+          controller: balanceController,
+          keyboardType: TextInputType.number,
+          style: TextStyle(color: TColor.white),
+          decoration: InputDecoration(
+            hintText: 'Enter amount',
+            hintStyle: TextStyle(color: TColor.gray30),
+            prefixText: '₹ ',
+            prefixStyle: TextStyle(color: TColor.white),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: TColor.gray30),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: TColor.secondary),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: TextStyle(color: TColor.gray30)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final amount = double.tryParse(balanceController.text);
+              if (amount != null && amount > 0) {
+                final user = FirebaseAuth.instance.currentUser;
+                if (user != null) {
+                  await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .update({'monthlyIncome': amount});
+                  setState(() {
+                    monthlyIncome = amount;
+                  });
+                }
+                Navigator.pop(context);
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: TColor.secondary),
+            child: Text('Save', style: TextStyle(color: TColor.primary)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -212,25 +303,34 @@ class _HomeViewState extends State<HomeView> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Balance",
-                                  style: TextStyle(
-                                    color: TColor.primary500.withOpacity(0.7),
-                                    fontSize: 12,
+                            GestureDetector(
+                              onTap: _showSetBalanceDialog,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        "Balance",
+                                        style: TextStyle(
+                                          color: TColor.primary500.withOpacity(0.7),
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Icon(Icons.edit, size: 12, color: TColor.primary500.withOpacity(0.7)),
+                                    ],
                                   ),
-                                ),
-                                Text(
-                                  "\$ 12,480.00",
-                                  style: TextStyle(
-                                    color: TColor.primary500,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
+                                  Text(
+                                    "₹ ${(monthlyIncome - totalExpenses).toStringAsFixed(2)}",
+                                    style: TextStyle(
+                                      color: TColor.primary500,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
