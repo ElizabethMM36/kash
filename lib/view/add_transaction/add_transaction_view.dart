@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kash/common/color_extension.dart';
 import 'package:kash/common_widget/primary_button.dart';
 import 'package:kash/common_widget/round_textfield.dart';
+import 'package:kash/services/transaction_service.dart';
 
 class AddTransactionView extends StatefulWidget {
   const AddTransactionView({super.key});
@@ -16,6 +17,51 @@ class _AddTransactionViewState extends State<AddTransactionView> {
   TextEditingController txtNote = TextEditingController();
   String selectedCategory = "Food";
   List<String> categories = ["Food", "Transport", "Bills", "Shopping", "Entertainment", "Health", "Other"];
+  bool isLoading = false;
+  final TransactionService _transactionService = TransactionService();
+
+  Future<void> _saveTransaction() async {
+    if (txtAmount.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter an amount")),
+      );
+      return;
+    }
+
+    final amount = double.tryParse(txtAmount.text);
+    if (amount == null || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter a valid amount")),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      await _transactionService.addTransaction(
+        amount: amount,
+        category: selectedCategory,
+        date: txtDate.text.isNotEmpty ? txtDate.text : DateTime.now().toString().split(' ')[0],
+        note: txtNote.text,
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Transaction saved successfully!")),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error saving transaction: $e")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -104,9 +150,9 @@ class _AddTransactionViewState extends State<AddTransactionView> {
           ),
           const SizedBox(height: 30),
           PrimaryButton(
-            title: "Save Transaction",
+            title: isLoading ? "Saving..." : "Save Transaction",
             onPressed: () {
-               Navigator.pop(context);
+              if (!isLoading) _saveTransaction();
             },
           ),
           const SizedBox(height: 20), // Bottom safe area padding usually handled by modal but manual spacing is safe

@@ -4,6 +4,7 @@ import 'package:kash/view/add_transaction/add_transaction_view.dart';
 import 'package:kash/view/split_expense/split_expense_view.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:kash/services/transaction_service.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -14,6 +15,8 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   String userName = "Loading...";
+  final TransactionService _transactionService = TransactionService();
+
   void loadUserData() async {
     final user = FirebaseAuth.instance.currentUser;
 
@@ -37,41 +40,45 @@ class _HomeViewState extends State<HomeView> {
     loadUserData();
   }
 
-  // Dummy data for recent transactions
-  List<Map<String, dynamic>> recentTransactions = [
-    {
-      "name": "Netflix Subscription",
-      "date": "Today, 10:00 AM",
-      "category": "Entertainment",
-      "amount": "-\$15.00",
-      "isIncome": false,
-      "color": Colors.red,
-    },
-    {
-      "name": "Salary",
-      "date": "Yesterday, 05:00 PM",
-      "category": "Income",
-      "amount": "+\$3,500.00",
-      "isIncome": true,
-      "color": Colors.green,
-    },
-    {
-      "name": "Grocery Shopping",
-      "date": "Oct 24, 02:30 PM",
-      "category": "Food",
-      "amount": "-\$85.50",
-      "isIncome": false,
-      "color": Colors.orange,
-    },
-    {
-      "name": "Electric Bill",
-      "date": "Oct 20, 09:00 AM",
-      "category": "Bills",
-      "amount": "-\$120.00",
-      "isIncome": false,
-      "color": Colors.blue,
-    },
-  ];
+  // Helper to get category color
+  Color _getCategoryColor(String category) {
+    switch (category.toLowerCase()) {
+      case 'food':
+        return Colors.orange;
+      case 'transport':
+        return Colors.blue;
+      case 'bills':
+        return Colors.purple;
+      case 'shopping':
+        return Colors.pink;
+      case 'entertainment':
+        return Colors.red;
+      case 'health':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // Helper to get category icon
+  IconData _getCategoryIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'food':
+        return Icons.restaurant;
+      case 'transport':
+        return Icons.directions_car;
+      case 'bills':
+        return Icons.receipt;
+      case 'shopping':
+        return Icons.shopping_bag_outlined;
+      case 'entertainment':
+        return Icons.movie;
+      case 'health':
+        return Icons.medical_services;
+      default:
+        return Icons.attach_money;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -333,70 +340,110 @@ class _HomeViewState extends State<HomeView> {
               ),
             ),
 
-            ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              physics: const NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              itemCount: recentTransactions.length,
-              itemBuilder: (context, index) {
-                var tObj = recentTransactions[index];
-                return Container(
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  padding: const EdgeInsets.all(15),
-                  decoration: BoxDecoration(
-                    color: TColor.gray80,
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: TColor.gray60.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        alignment: Alignment.center,
-                        child: Icon(
-                          Icons.shopping_bag_outlined,
-                          color: tObj["color"],
-                        ),
+            StreamBuilder<List<Map<String, dynamic>>>(
+              stream: _transactionService.getRecentTransactions(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                final transactions = snapshot.data ?? [];
+
+                if (transactions.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          Icon(Icons.receipt_long, color: TColor.gray30, size: 48),
+                          const SizedBox(height: 10),
+                          Text(
+                            "No transactions yet",
+                            style: TextStyle(color: TColor.gray30, fontSize: 14),
+                          ),
+                          Text(
+                            "Tap 'Add Expense' to add your first transaction",
+                            style: TextStyle(color: TColor.gray30, fontSize: 12),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 15),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              tObj["name"],
-                              style: TextStyle(
-                                color: TColor.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemCount: transactions.length,
+                  itemBuilder: (context, index) {
+                    var tObj = transactions[index];
+                    final category = tObj['category'] as String? ?? 'Other';
+                    final amount = tObj['amount'] as num? ?? 0;
+                    final note = tObj['note'] as String? ?? '';
+                    final date = tObj['date'] as String? ?? '';
+                    final isIncome = tObj['isIncome'] as bool? ?? false;
+
+                    return Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.all(15),
+                      decoration: BoxDecoration(
+                        color: TColor.gray80,
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: TColor.gray60.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            Text(
-                              "${tObj["category"]} • ${tObj["date"]}",
-                              style: TextStyle(
-                                color: TColor.gray30,
-                                fontSize: 12,
-                              ),
+                            alignment: Alignment.center,
+                            child: Icon(
+                              _getCategoryIcon(category),
+                              color: _getCategoryColor(category),
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 15),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  note.isNotEmpty ? note : category,
+                                  style: TextStyle(
+                                    color: TColor.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  "$category • $date",
+                                  style: TextStyle(
+                                    color: TColor.gray30,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            isIncome ? "+₹${amount.toStringAsFixed(2)}" : "-₹${amount.toStringAsFixed(2)}",
+                            style: TextStyle(
+                              color: isIncome ? Colors.greenAccent : TColor.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        tObj["amount"],
-                        style: TextStyle(
-                          color: tObj["isIncome"]
-                              ? Colors.greenAccent
-                              : TColor.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 );
               },
             ),
