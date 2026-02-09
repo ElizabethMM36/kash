@@ -67,10 +67,10 @@ class BudgetService {
   }
 
   /// Update a budget's percentage
-  Future<void> updateBudgetPercentage(String category, int newPercentage) async {
+  Future<void> updateBudgetPercentage(String docId, int newPercentage) async {
     if (_uid == null) throw Exception("User not logged in");
 
-    await _budgetsRef.doc(category).update({
+    await _budgetsRef.doc(docId).update({
       'percentage': newPercentage,
       'isDefault': false,
       'updatedAt': Timestamp.now(),
@@ -78,13 +78,13 @@ class BudgetService {
   }
 
   /// Update multiple budgets at once
-  Future<void> updateMultipleBudgets(Map<String, int> categoryPercentages) async {
+  Future<void> updateMultipleBudgets(Map<String, int> budgetIdsAndPercentages) async {
     if (_uid == null) throw Exception("User not logged in");
 
     final batch = _db.batch();
 
-    categoryPercentages.forEach((category, percentage) {
-      batch.update(_budgetsRef.doc(category), {
+    budgetIdsAndPercentages.forEach((docId, percentage) {
+      batch.update(_budgetsRef.doc(docId), {
         'percentage': percentage,
         'isDefault': false,
         'updatedAt': Timestamp.now(),
@@ -103,12 +103,12 @@ class BudgetService {
     if (_uid == null) throw Exception("User not logged in");
 
     // Check if category already exists
-    final existing = await _budgetsRef.doc(category).get();
-    if (existing.exists) {
+    final querySnapshot = await _budgetsRef.where('category', isEqualTo: category).limit(1).get();
+    if (querySnapshot.docs.isNotEmpty) {
       throw Exception("Category '$category' already exists");
     }
 
-    await _budgetsRef.doc(category).set({
+    await _budgetsRef.add({
       'category': category,
       'percentage': percentage,
       'colorValue': colorValue,
@@ -119,17 +119,17 @@ class BudgetService {
   }
 
   /// Delete a category
-  Future<void> deleteCategory(String category) async {
+  Future<void> deleteCategory(String docId) async {
     if (_uid == null) throw Exception("User not logged in");
 
-    await _budgetsRef.doc(category).delete();
+    await _budgetsRef.doc(docId).delete();
   }
 
   /// Update spent amount for a category
-  Future<void> updateSpent(String category, double amount) async {
+  Future<void> updateSpent(String docId, double amount) async {
     if (_uid == null) throw Exception("User not logged in");
 
-    await _budgetsRef.doc(category).update({
+    await _budgetsRef.doc(docId).update({
       'spent': FieldValue.increment(amount),
       'updatedAt': Timestamp.now(),
     });
@@ -179,7 +179,7 @@ class BudgetService {
     final batch = _db.batch();
 
     for (var budget in defaultBudgets) {
-      final docRef = _budgetsRef.doc(budget['category'] as String);
+      final docRef = _budgetsRef.doc(); // Generate auto-ID
       batch.set(docRef, {
         'category': budget['category'],
         'percentage': budget['percentage'],

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:kash/common/color_extension.dart';
 import 'package:kash/services/budget_service.dart';
-import 'package:kash/view/budget/edit_budget_view.dart';
+import 'package:kash/view/budget/add_category_dialog.dart';
+import 'dart:async';
 
 class BudgetView extends StatefulWidget {
   const BudgetView({super.key});
@@ -17,6 +18,11 @@ class _BudgetViewState extends State<BudgetView> {
   double monthlyIncome = 0.0;
   bool isLoading = true;
   int totalPercentage = 0;
+  bool isEditing = false;
+  
+  // Local state for editing
+  List<Map<String, dynamic>> tempBudgets = [];
+  StreamSubscription? _budgetSubscription;
 
   @override
   void initState() {
@@ -30,7 +36,8 @@ class _BudgetViewState extends State<BudgetView> {
     try {
       monthlyIncome = await _budgetService.getMonthlyIncome();
       
-      _budgetService.getBudgets().listen((data) {
+      _budgetSubscription?.cancel();
+      _budgetSubscription = _budgetService.getBudgets().listen((data) {
         if (mounted) {
           int total = 0;
           for (var budget in data) {
@@ -41,7 +48,24 @@ class _BudgetViewState extends State<BudgetView> {
             budgets = data;
             totalPercentage = total;
             isLoading = false;
+            
+            // If we are editing, we don't want live updates to override unless we handle merging
+            // For simplicity, if editing, we ignore stream updates until done.
+            if (!isEditing) {
+              tempBudgets = List.from(budgets);
+            }
           });
+        }
+      }, onError: (e) {
+        if (mounted) {
+          setState(() => isLoading = false);
+          // Show error properly instead of crashing
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Error loading budgets: $e"),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       });
     } catch (e) {
@@ -54,14 +78,142 @@ class _BudgetViewState extends State<BudgetView> {
     }
   }
 
-  void _openEditBudgets() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const EditBudgetView()),
+  @override
+  void dispose() {
+    _budgetSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _toggleEditMode() async {
+    if (isEditing) {
+      // Save Changes
+      await _saveChanges();
+    } else {
+      // Enter Edit Mode
+      setState(() {
+        isEditing = true;
+        tempBudgets = budgets.map((b) => Map<String, dynamic>.from(b)).toList();
+      });
+    }
+  }
+
+  Future<void> _saveChanges() async {
+    setState(() => isLoading = true);
+    try {
+      Map<String, int> updates = {};
+      for (var budget in tempBudgets) {
+        updates[budget['id']] = budget['percentage'];
+      }
+      
+      await _budgetService.updateMultipleBudgets(updates);
+      
+      setState(() {
+        isEditing = false;
+        isLoading = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Budgets updated successfully")),
+      );
+    } catch (e) {
+      setState(() => isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error updating budgets: $e")),
+      );
+    }
+  }
+  
+  Future<void> _addCategory() async {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => const AddCategoryDialog(),
     );
-    
-    if (result == true) {
-      _loadData();
+
+    if (result != null) {
+      try {
+        await _budgetService.addCategory(
+          category: result['category'],
+          percentage: result['percentage'],
+          colorValue: result['colorValue'],
+        );
+        // Stream will update the list automatically
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error adding category: $e")),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _deleteCategory(String docId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Delete Category?"),
+        content: const Text("Are you sure you want to delete this budget category?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _budgetService.deleteCategory(docId);
+        setState(() {
+          tempBudgets.removeWhere((b) => b['id'] == docId);
+        });
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error deleting category: $e")),
+          );
+        }
+      }
+    }
+  }
+  
+  Future<void> _resetToDefaults() async {
+     final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Reset to Defaults?"),
+        content: const Text("This will delete all custom categories and restore default budgets. This action cannot be undone."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Reset", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _budgetService.resetToDefaults();
+        setState(() {
+          isEditing = false; 
+        });
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error resetting budgets: $e")),
+          );
+        }
+      }
     }
   }
 
@@ -79,9 +231,20 @@ class _BudgetViewState extends State<BudgetView> {
     if (percent >= 0.7) return Colors.orange;
     return TColor.secondary;
   }
+  
+  int _calculateTempTotal() {
+    int total = 0;
+    for (var budget in tempBudgets) {
+      total += (budget['percentage'] as int? ?? 0);
+    }
+    return total;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final displayBudgets = isEditing ? tempBudgets : budgets;
+    final displayTotalPercentage = isEditing ? _calculateTempTotal() : totalPercentage;
+    
     return Scaffold(
       backgroundColor: TColor.primaryBg,
       appBar: AppBar(
@@ -89,7 +252,7 @@ class _BudgetViewState extends State<BudgetView> {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          "Budgets",
+          isEditing ? "Edit Budgets" : "Budgets",
           style: TextStyle(
             color: TColor.white,
             fontSize: 20,
@@ -98,16 +261,24 @@ class _BudgetViewState extends State<BudgetView> {
         ),
         actions: [
           IconButton(
-            onPressed: _openEditBudgets,
-            icon: Icon(Icons.edit, color: TColor.white),
+            onPressed: _toggleEditMode,
+            icon: Icon(
+              isEditing ? Icons.check : Icons.edit, 
+              color: TColor.white
+            ),
           )
         ],
       ),
-      body: isLoading
+      body: isLoading && budgets.isEmpty
           ? Center(child: CircularProgressIndicator(color: TColor.secondary))
-          : budgets.isEmpty
+          : displayBudgets.isEmpty && !isEditing
               ? _buildEmptyState()
-              : _buildBudgetList(),
+              : _buildBudgetList(displayBudgets, displayTotalPercentage),
+      floatingActionButton: isEditing ? FloatingActionButton(
+        onPressed: _addCategory,
+        backgroundColor: TColor.secondary,
+        child: const Icon(Icons.add, color: Colors.white),
+      ) : null,
     );
   }
 
@@ -140,7 +311,7 @@ class _BudgetViewState extends State<BudgetView> {
           ),
           const SizedBox(height: 30),
           ElevatedButton.icon(
-            onPressed: _openEditBudgets,
+            onPressed: _toggleEditMode, // Enter edit mode directly
             icon: const Icon(Icons.add),
             label: const Text("Set Up Budgets"),
             style: ElevatedButton.styleFrom(
@@ -160,7 +331,7 @@ class _BudgetViewState extends State<BudgetView> {
     );
   }
 
-  Widget _buildBudgetList() {
+  Widget _buildBudgetList(List<Map<String, dynamic>> budgetList, int currentTotalPercentage) {
     return Column(
       children: [
         // Summary Header
@@ -214,19 +385,19 @@ class _BudgetViewState extends State<BudgetView> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: totalPercentage == 100
+                      color: currentTotalPercentage == 100
                           ? TColor.secondary.withValues(alpha: 0.2)
-                          : totalPercentage > 100
+                          : currentTotalPercentage > 100
                               ? Colors.red.withValues(alpha: 0.2)
                               : TColor.yellow.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      "$totalPercentage% Allocated",
+                      "$currentTotalPercentage% Allocated",
                       style: TextStyle(
-                        color: totalPercentage == 100
+                        color: currentTotalPercentage == 100
                             ? TColor.secondary
-                            : totalPercentage > 100
+                            : currentTotalPercentage > 100
                                 ? Colors.red
                                 : TColor.yellow,
                         fontSize: 14,
@@ -236,6 +407,20 @@ class _BudgetViewState extends State<BudgetView> {
                   ),
                 ],
               ),
+              if (isEditing) ...[
+                const SizedBox(height: 10),
+                   SizedBox(
+                      width: double.infinity,
+                      child: TextButton.icon(
+                        onPressed: _resetToDefaults,
+                        icon: const Icon(Icons.refresh, size: 16),
+                        label: const Text("Reset to Recommended Defaults"),
+                        style: TextButton.styleFrom(
+                          foregroundColor: TColor.gray30,
+                        ),
+                      ),
+                    ),
+              ]
             ],
           ),
         ),
@@ -243,10 +428,10 @@ class _BudgetViewState extends State<BudgetView> {
         // Budget Cards
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: budgets.length,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20), // Added bottom padding
+            itemCount: budgetList.length,
             itemBuilder: (context, index) {
-              final budget = budgets[index];
+              final budget = budgetList[index];
               final category = budget['category'] as String;
               final percentage = budget['percentage'] as int;
               final colorValue = budget['colorValue'] as int? ?? 0xFF00B894;
@@ -255,6 +440,7 @@ class _BudgetViewState extends State<BudgetView> {
               final limit = monthlyIncome * percentage / 100;
               final remaining = limit - spent;
               final spentPercent = limit > 0 ? (spent / limit).clamp(0.0, 1.0) : 0.0;
+              final docId = budget['id'] as String;
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 16),
@@ -296,7 +482,9 @@ class _BudgetViewState extends State<BudgetView> {
                                 ),
                               ),
                               Text(
-                                "$percentage% of income",
+                                isEditing 
+                                  ? "$percentage% limit" 
+                                  : "$percentage% of income",
                                 style: TextStyle(
                                   color: TColor.gray30,
                                   fontSize: 12,
@@ -316,82 +504,108 @@ class _BudgetViewState extends State<BudgetView> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            Text(
-                              "limit",
-                              style: TextStyle(
-                                color: TColor.gray30,
-                                fontSize: 10,
-                              ),
-                            ),
                           ],
                         ),
+                         if (isEditing)
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                            onPressed: () => _deleteCategory(docId),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 16),
 
-                    // Progress Bar
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: spentPercent,
-                        backgroundColor: TColor.gray60.withValues(alpha: 0.3),
-                        valueColor: AlwaysStoppedAnimation(
-                          _getProgressColor(spentPercent),
-                        ),
-                        minHeight: 8,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Footer Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                text: _formatCurrency(spent),
-                                style: TextStyle(
-                                  color: TColor.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                    // Content: Progress Bar OR Slider
+                    if (isEditing) 
+                      Column(
+                        children: [
+                           SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                activeTrackColor: color,
+                                inactiveTrackColor: TColor.gray60.withValues(alpha: 0.3),
+                                thumbColor: color,
+                                overlayColor: color.withValues(alpha: 0.2),
+                                trackHeight: 6,
                               ),
-                              TextSpan(
-                                text: " spent",
-                                style: TextStyle(
-                                  color: TColor.gray30,
-                                  fontSize: 14,
-                                ),
+                              child: Slider(
+                                value: percentage.toDouble(),
+                                min: 1,
+                                max: 50,
+                                divisions: 49,
+                                onChanged: (value) {
+                                  setState(() {
+                                    budgetList[index]['percentage'] = value.toInt();
+                                  });
+                                },
                               ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: remaining >= 0
-                                ? TColor.secondary.withValues(alpha: 0.15)
-                                : Colors.red.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            remaining >= 0
-                                ? "${_formatCurrency(remaining)} left"
-                                : "${_formatCurrency(remaining.abs())} over",
-                            style: TextStyle(
-                              color: remaining >= 0 ? TColor.secondary : Colors.red,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                            ),
+                        ],
+                      )
+                    else
+                      Column(
+                        children: [
+                           ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: spentPercent,
+                              backgroundColor: TColor.gray60.withValues(alpha: 0.3),
+                              valueColor: AlwaysStoppedAnimation(
+                                _getProgressColor(spentPercent),
+                              ),
+                              minHeight: 8,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                           const SizedBox(height: 12),
+                           Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                RichText(
+                                  text: TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text: _formatCurrency(spent),
+                                        style: TextStyle(
+                                          color: TColor.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      TextSpan(
+                                        text: " spent",
+                                        style: TextStyle(
+                                          color: TColor.gray30,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: remaining >= 0
+                                        ? TColor.secondary.withValues(alpha: 0.15)
+                                        : Colors.red.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    remaining >= 0
+                                        ? "${_formatCurrency(remaining)} left"
+                                        : "${_formatCurrency(remaining.abs())} over",
+                                    style: TextStyle(
+                                      color: remaining >= 0 ? TColor.secondary : Colors.red,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ] 
+                      ),
                   ],
                 ),
               );
@@ -405,6 +619,7 @@ class _BudgetViewState extends State<BudgetView> {
   IconData _getCategoryIcon(String category) {
     switch (category.toLowerCase()) {
       case 'rent/housing':
+      case 'rent_housing': // Handle slugified
         return Icons.home_rounded;
       case 'groceries':
         return Icons.shopping_cart_rounded;
