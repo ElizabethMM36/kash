@@ -15,16 +15,29 @@ class _AddTransactionViewState extends State<AddTransactionView> {
   TextEditingController txtAmount = TextEditingController();
   TextEditingController txtDate = TextEditingController();
   TextEditingController txtNote = TextEditingController();
-  String selectedCategory = "Food";
-  List<String> categories = ["Food", "Transport", "Bills", "Shopping", "Entertainment", "Health", "Other"];
+  String selectedCategory = "Groceries";
+  List<String> categories = [
+    "Rent & Housing",
+    "Groceries",
+    "Transport",
+    "Utilities",
+    "Healthcare",
+    "Dining Out",
+    "Entertainment",
+    "Shopping",
+    "Subscriptions",
+    "Personal Care",
+    "Savings",
+    "Others",
+  ];
   bool isLoading = false;
   final TransactionService _transactionService = TransactionService();
 
   Future<void> _saveTransaction() async {
     if (txtAmount.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter an amount")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Please enter an amount")));
       return;
     }
 
@@ -42,7 +55,9 @@ class _AddTransactionViewState extends State<AddTransactionView> {
       await _transactionService.addTransaction(
         amount: amount,
         category: selectedCategory,
-        date: txtDate.text.isNotEmpty ? txtDate.text : DateTime.now().toString().split(' ')[0],
+        date: txtDate.text.isNotEmpty
+            ? txtDate.text
+            : DateTime.now().toString().split(' ')[0],
         note: txtNote.text,
       );
 
@@ -54,9 +69,9 @@ class _AddTransactionViewState extends State<AddTransactionView> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error saving transaction: $e")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error saving transaction: $e")));
       }
     } finally {
       if (mounted) setState(() => isLoading = false);
@@ -143,11 +158,8 @@ class _AddTransactionViewState extends State<AddTransactionView> {
             controller: txtDate,
             keyboardType: TextInputType.datetime,
           ),
-           const SizedBox(height: 15),
-          RoundTextField(
-            title: "Note",
-            controller: txtNote,
-          ),
+          const SizedBox(height: 15),
+          RoundTextField(title: "Note", controller: txtNote),
           const SizedBox(height: 30),
           PrimaryButton(
             title: isLoading ? "Saving..." : "Save Transaction",
@@ -155,7 +167,9 @@ class _AddTransactionViewState extends State<AddTransactionView> {
               if (!isLoading) _saveTransaction();
             },
           ),
-          const SizedBox(height: 20), // Bottom safe area padding usually handled by modal but manual spacing is safe
+          const SizedBox(
+            height: 20,
+          ), // Bottom safe area padding usually handled by modal but manual spacing is safe
         ],
       ),
     );
