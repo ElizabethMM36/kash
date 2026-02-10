@@ -97,23 +97,29 @@ class _SignUpViewState extends State<SignUpView> {
                     return;
                   }
 
+                  final rawEmail = txtEmail.text;
+                  final email = rawEmail.trim().toLowerCase();
+                  final password = txtPassword.text.trim();
+
                   try {
                     // Create user
                     UserCredential credential = await FirebaseAuth.instance
                         .createUserWithEmailAndPassword(
-                          email: txtEmail.text.trim(),
-                          password: txtPassword.text.trim(),
+                          email: email,
+                          password: password,
                         );
+
                     // Save the display name
                     final user = credential.user!;
                     final uid = user.uid;
                     await user.updateDisplayName(txtName.text.trim());
+
                     // Save the name to firestore
                     final service = UserService();
                     await service.createUserProfile(
                       uid: uid,
                       name: txtName.text.trim(),
-                      email: txtEmail.text.trim(),
+                      email: email,
                     );
                     await service.createDefaultBudgets(uid);
 
@@ -126,8 +132,21 @@ class _SignUpViewState extends State<SignUpView> {
                       );
                     }
                   } on FirebaseAuthException catch (e) {
+                    var message = e.message ?? "Sign up failed";
+                    if (e.code == 'weak-password') {
+                      message = 'The password is too weak.';
+                    } else if (e.code == 'email-already-in-use') {
+                      message =
+                          'The email is already registered. Try signing in.';
+                    } else if (e.code == 'invalid-email') {
+                      message = 'The email address is not valid.';
+                    }
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(message)));
+                  } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(e.message ?? "Sign up failed")),
+                      SnackBar(content: Text('Sign up failed: $e')),
                     );
                   }
                 },
