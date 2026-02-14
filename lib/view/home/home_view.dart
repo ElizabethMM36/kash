@@ -360,17 +360,7 @@ class _HomeViewState extends State<HomeView> {
                             letterSpacing: 1.0,
                           ),
                         ),
-                        const SizedBox(height: 5),
-                        Text(
-                          "**** **** **** 3456",
-                          style: TextStyle(
-                            color: TColor.primary500,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 2.0,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
+// card number removed
                         // Monthly Expenses & Income Row
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
