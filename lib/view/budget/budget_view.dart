@@ -260,6 +260,12 @@ class _BudgetViewState extends State<BudgetView> {
           ),
         ),
         actions: [
+          if (isEditing)
+            IconButton(
+              onPressed: _addCategory,
+              icon: Icon(Icons.add, color: TColor.white),
+              tooltip: 'Add Category',
+            ),
           IconButton(
             onPressed: _toggleEditMode,
             icon: Icon(
@@ -274,11 +280,6 @@ class _BudgetViewState extends State<BudgetView> {
           : displayBudgets.isEmpty && !isEditing
               ? _buildEmptyState()
               : _buildBudgetList(displayBudgets, displayTotalPercentage),
-      floatingActionButton: isEditing ? FloatingActionButton(
-        onPressed: _addCategory,
-        backgroundColor: TColor.secondary,
-        child: const Icon(Icons.add, color: Colors.white),
-      ) : null,
     );
   }
 
