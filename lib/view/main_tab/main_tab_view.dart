@@ -127,7 +127,7 @@ class _MainTabViewState extends State<MainTabView> {
         backgroundColor: TColor.secondary,
         child: const Icon(Icons.add, size: 30),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }

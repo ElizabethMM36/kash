@@ -38,7 +38,11 @@ class UserService {
     if (snapshot.docs.isNotEmpty) return;
 
     final defaultBudgets = [
-      {'category': 'Rent/Housing', 'percentage': 25, 'colorValue': 0xFF6C5CE7},
+      {
+        'category': 'Rent & Housing',
+        'percentage': 25,
+        'colorValue': 0xFF6C5CE7,
+      },
       {'category': 'Groceries', 'percentage': 12, 'colorValue': 0xFF00B894},
       {'category': 'Transport', 'percentage': 10, 'colorValue': 0xFF0984E3},
       {'category': 'Utilities', 'percentage': 5, 'colorValue': 0xFFFDCB6E},

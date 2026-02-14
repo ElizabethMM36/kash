@@ -78,7 +78,9 @@ class BudgetService {
   }
 
   /// Update multiple budgets at once
-  Future<void> updateMultipleBudgets(Map<String, int> budgetIdsAndPercentages) async {
+  Future<void> updateMultipleBudgets(
+    Map<String, int> budgetIdsAndPercentages,
+  ) async {
     if (_uid == null) throw Exception("User not logged in");
 
     final batch = _db.batch();
@@ -103,7 +105,10 @@ class BudgetService {
     if (_uid == null) throw Exception("User not logged in");
 
     // Check if category already exists
-    final querySnapshot = await _budgetsRef.where('category', isEqualTo: category).limit(1).get();
+    final querySnapshot = await _budgetsRef
+        .where('category', isEqualTo: category)
+        .limit(1)
+        .get();
     if (querySnapshot.docs.isNotEmpty) {
       throw Exception("Category '$category' already exists");
     }
@@ -178,7 +183,11 @@ class BudgetService {
     if (snapshot.docs.isNotEmpty) return;
 
     final defaultBudgets = [
-      {'category': 'Rent/Housing', 'percentage': 25, 'colorValue': 0xFF6C5CE7},
+      {
+        'category': 'Rent & Housing',
+        'percentage': 25,
+        'colorValue': 0xFF6C5CE7,
+      },
       {'category': 'Groceries', 'percentage': 12, 'colorValue': 0xFF00B894},
       {'category': 'Transport', 'percentage': 10, 'colorValue': 0xFF0984E3},
       {'category': 'Utilities', 'percentage': 5, 'colorValue': 0xFFFDCB6E},

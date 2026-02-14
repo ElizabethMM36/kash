@@ -16,11 +16,10 @@ class TransactionService {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception("User not logged in");
 
-    await _db
-        .collection('users')
-        .doc(user.uid)
-        .collection('transactions')
-        .add({
+    final uid = user.uid;
+
+    // Add transaction
+    await _db.collection('users').doc(uid).collection('transactions').add({
       'amount': amount,
       'category': category,
       'date': date,
@@ -45,17 +44,19 @@ class TransactionService {
         .orderBy('createdAt', descending: true)
         .limit(5)
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) {
-              final data = doc.data();
-              return {
-                'id': doc.id,
-                'amount': data['amount'] ?? 0.0,
-                'category': data['category'] ?? '',
-                'date': data['date'] ?? '',
-                'note': data['note'] ?? '',
-                'isIncome': data['isIncome'] ?? false,
-                'createdAt': data['createdAt'],
-              };
-            }).toList());
+        .map(
+          (snapshot) => snapshot.docs.map((doc) {
+            final data = doc.data();
+            return {
+              'id': doc.id,
+              'amount': data['amount'] ?? 0.0,
+              'category': data['category'] ?? '',
+              'date': data['date'] ?? '',
+              'note': data['note'] ?? '',
+              'isIncome': data['isIncome'] ?? false,
+              'createdAt': data['createdAt'],
+            };
+          }).toList(),
+        );
   }
 }
