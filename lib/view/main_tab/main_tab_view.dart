@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kash/common/color_extension.dart';
+import 'package:kash/services/income_service.dart';
 import 'package:kash/view/add_income/add_income_view.dart';
 import 'package:kash/view/analytics/analytics_view.dart';
 import 'package:kash/view/budget/budget_view.dart';
@@ -74,16 +75,54 @@ class _MainTabViewState extends State<MainTabView> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Open Add Income Modal
-          showModalBottomSheet(
-            context: context,
-            backgroundColor: Colors.transparent,
-            isScrollControlled: true,
-            builder: (context) {
-              return const AddIncomeView();
-            },
-          );
+        onPressed: () async {
+          final incomeService = IncomeService();
+          final hasProfile = await incomeService.hasExistingProfile();
+
+          if (!mounted) return;
+
+          if (hasProfile) {
+            // Show alert: profile already exists
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                backgroundColor: TColor.gray80,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                title: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: TColor.secondary),
+                    const SizedBox(width: 10),
+                    Text(
+                      "Budget Plan Exists",
+                      style: TextStyle(color: TColor.white, fontSize: 18),
+                    ),
+                  ],
+                ),
+                content: Text(
+                  "You've already submitted your budget plan. To update it, go to the Profile section.",
+                  style: TextStyle(color: TColor.gray30, fontSize: 14),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text("OK", style: TextStyle(color: TColor.secondary, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            );
+          } else {
+            // Open Add Income Modal
+            showModalBottomSheet(
+              context: context,
+              backgroundColor: Colors.transparent,
+              isScrollControlled: true,
+              builder: (context) {
+                return const AddIncomeView();
+              },
+            );
+          }
         },
         backgroundColor: TColor.secondary,
         child: const Icon(Icons.add, size: 30),
