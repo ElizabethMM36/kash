@@ -39,6 +39,17 @@ class BudgetService {
     });
   }
 
+  /// Get category names as a stream (for use in dropdowns)
+  Stream<List<String>> getCategoryNames() {
+    if (_uid == null) return Stream.value([]);
+
+    return _budgetsRef.orderBy('category').snapshots().map((snapshot) {
+      return snapshot.docs
+          .map((doc) => doc.data()['category'] as String)
+          .toList();
+    });
+  }
+
   /// Get user's monthly income
   Future<double> getMonthlyIncome() async {
     if (_uid == null) return 0.0;
