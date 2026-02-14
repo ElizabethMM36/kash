@@ -42,7 +42,7 @@ class TransactionService {
         .doc(user.uid)
         .collection('transactions')
         .orderBy('createdAt', descending: true)
-        .limit(5)
+        .limit(50)
         .snapshots()
         .map(
           (snapshot) => snapshot.docs.map((doc) {

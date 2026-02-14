@@ -515,14 +515,14 @@ class _HomeViewState extends State<HomeView> {
 
             const SizedBox(height: 20),
 
-            // Expense Log Preview
+            // Expense Log
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Expense Log Preview",
+                    "Expense Log",
                     style: TextStyle(
                       color: TColor.white,
                       fontSize: 18,
@@ -584,80 +584,200 @@ class _HomeViewState extends State<HomeView> {
                   );
                 }
 
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: transactions.length,
-                  itemBuilder: (context, index) {
-                    var tObj = transactions[index];
-                    final category = tObj['category'] as String? ?? 'Other';
-                    final amount = tObj['amount'] as num? ?? 0;
-                    final note = tObj['note'] as String? ?? '';
-                    final date = tObj['date'] as String? ?? '';
-                    final isIncome = tObj['isIncome'] as bool? ?? false;
+                // Group transactions by date
+                final grouped = _groupTransactionsByDate(transactions);
 
-                    return Container(
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      padding: const EdgeInsets.all(15),
-                      decoration: BoxDecoration(
-                        color: TColor.gray80,
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Row(
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: grouped.entries.map((entry) {
+                      final dateKey = entry.key;
+                      final dayTransactions = entry.value;
+
+                      // Calculate daily totals
+                      double dayIncome = 0;
+                      double dayExpense = 0;
+                      for (var t in dayTransactions) {
+                        final amt = (t['amount'] as num).toDouble();
+                        if (t['isIncome'] == true) {
+                          dayIncome += amt;
+                        } else {
+                          dayExpense += amt;
+                        }
+                      }
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: TColor.gray60.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            alignment: Alignment.center,
-                            child: Icon(
-                              _getCategoryIcon(category),
-                              color: _getCategoryColor(category),
-                            ),
-                          ),
-                          const SizedBox(width: 15),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          // Date Header
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16, bottom: 12),
+                            child: Row(
                               children: [
                                 Text(
-                                  note.isNotEmpty ? note : category,
+                                  _formatDateHeader(dateKey),
                                   style: TextStyle(
                                     color: TColor.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
+                                const SizedBox(width: 8),
                                 Text(
-                                  "$category • $date",
+                                  _getDayName(dateKey),
                                   style: TextStyle(
                                     color: TColor.gray30,
-                                    fontSize: 12,
+                                    fontSize: 13,
                                   ),
                                 ),
+                                const Spacer(),
+                                if (dayIncome > 0)
+                                  Text(
+                                    "+${_formatAmount(dayIncome)}",
+                                    style: const TextStyle(
+                                      color: Colors.greenAccent,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                if (dayIncome > 0 && dayExpense > 0)
+                                  const SizedBox(width: 8),
+                                if (dayExpense > 0)
+                                  Text(
+                                    "-${_formatAmount(dayExpense)}",
+                                    style: const TextStyle(
+                                      color: Colors.red,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
-                          Text(
-                            isIncome
-                                ? "+₹${amount.toStringAsFixed(2)}"
-                                : "-₹${amount.toStringAsFixed(2)}",
-                            style: TextStyle(
-                              color: isIncome
-                                  ? Colors.greenAccent
-                                  : TColor.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+
+                          // Timeline transactions
+                          ...List.generate(dayTransactions.length, (i) {
+                            final t = dayTransactions[i];
+                            final category = t['category'] as String? ?? 'Other';
+                            final amount = (t['amount'] as num?)?.toDouble() ?? 0;
+                            final note = t['note'] as String? ?? '';
+                            final isIncome = t['isIncome'] as bool? ?? false;
+                            final timeStr = _getTimeFromTransaction(t);
+                            final isLast = i == dayTransactions.length - 1;
+
+                            return IntrinsicHeight(
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  // Time + Timeline
+                                  SizedBox(
+                                    width: 56,
+                                    child: Column(
+                                      children: [
+                                        Text(
+                                          timeStr,
+                                          style: TextStyle(
+                                            color: TColor.gray30,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Container(
+                                          width: 8,
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            color: isIncome ? Colors.greenAccent : TColor.secondary,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        if (!isLast)
+                                          Expanded(
+                                            child: Container(
+                                              width: 2,
+                                              color: TColor.gray60.withOpacity(0.3),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+
+                                  // Transaction Card
+                                  Expanded(
+                                    child: Container(
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      padding: const EdgeInsets.all(14),
+                                      decoration: BoxDecoration(
+                                        color: TColor.gray80,
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            width: 44,
+                                            height: 44,
+                                            decoration: BoxDecoration(
+                                              color: _getCategoryColor(category).withOpacity(0.15),
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: Icon(
+                                              _getCategoryIcon(category),
+                                              color: _getCategoryColor(category),
+                                              size: 22,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  note.isNotEmpty ? note : category,
+                                                  style: TextStyle(
+                                                    color: TColor.white,
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  "$category · $timeStr",
+                                                  style: TextStyle(
+                                                    color: TColor.gray30,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Text(
+                                            isIncome
+                                                ? "+₹${_formatAmount(amount)}"
+                                                : "-₹${_formatAmount(amount)}",
+                                            style: TextStyle(
+                                              color: isIncome
+                                                  ? Colors.greenAccent
+                                                  : Colors.red,
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
                         ],
-                      ),
-                    );
-                  },
+                      );
+                    }).toList(),
+                  ),
                 );
               },
             ),
@@ -698,5 +818,64 @@ class _HomeViewState extends State<HomeView> {
         ],
       ),
     );
+  }
+
+  // Group transactions by date string
+  Map<String, List<Map<String, dynamic>>> _groupTransactionsByDate(
+      List<Map<String, dynamic>> transactions) {
+    final Map<String, List<Map<String, dynamic>>> grouped = {};
+
+    for (var t in transactions) {
+      String dateKey;
+      final createdAt = t['createdAt'];
+      if (createdAt is Timestamp) {
+        final dt = createdAt.toDate();
+        dateKey = '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+      } else {
+        dateKey = (t['date'] as String?) ?? 'Unknown';
+      }
+
+      grouped.putIfAbsent(dateKey, () => []);
+      grouped[dateKey]!.add(t);
+    }
+
+    return grouped;
+  }
+
+  String _formatDateHeader(String dateKey) {
+    try {
+      final parts = dateKey.split('-');
+      if (parts.length == 3) {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        final month = months[int.parse(parts[1]) - 1];
+        final day = parts[2];
+        return '$month $day';
+      }
+    } catch (_) {}
+    return dateKey;
+  }
+
+  String _getDayName(String dateKey) {
+    try {
+      final parts = dateKey.split('-');
+      if (parts.length == 3) {
+        final dt = DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        return days[dt.weekday - 1];
+      }
+    } catch (_) {}
+    return '';
+  }
+
+  String _getTimeFromTransaction(Map<String, dynamic> t) {
+    final createdAt = t['createdAt'];
+    if (createdAt is Timestamp) {
+      final dt = createdAt.toDate();
+      final hour = dt.hour.toString().padLeft(2, '0');
+      final minute = dt.minute.toString().padLeft(2, '0');
+      return '$hour:$minute';
+    }
+    return '';
   }
 }
