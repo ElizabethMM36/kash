@@ -18,6 +18,8 @@ class _HomeViewState extends State<HomeView> {
   double monthlyIncome = 0;
   double totalExpenses = 0;
   double totalIncome = 0;
+  double monthlyExpenses = 0;
+  double monthlyIncomeTotal = 0;
   final TransactionService _transactionService = TransactionService();
 
   void loadUserData() async {
@@ -45,29 +47,68 @@ class _HomeViewState extends State<HomeView> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final snapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('transactions')
-        .get();
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('transactions')
+          .get();
 
-    double expenseTotal = 0;
-    double incomeTotal = 0;
-    for (var doc in snapshot.docs) {
-      final data = doc.data();
-      final amount = (data['amount'] ?? 0).toDouble();
-      final isIncome = data['isIncome'] ?? false;
-      if (isIncome) {
-        incomeTotal += amount;
-      } else {
-        expenseTotal += amount;
+      final now = DateTime.now();
+      final currentMonth = now.month;
+      final currentYear = now.year;
+
+      double expenseTotal = 0;
+      double incomeTotal = 0;
+      double monthExpense = 0;
+      double monthIncome = 0;
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final amount = (data['amount'] ?? 0).toDouble();
+        final isIncome = data['isIncome'] ?? false;
+
+        // Determine transaction month/year from date or createdAt
+        int txMonth = 0;
+        int txYear = 0;
+        final dateStr = data['date'] as String?;
+        if (dateStr != null && dateStr.contains('-')) {
+          try {
+            final parts = dateStr.split('-');
+            txYear = int.parse(parts[0]);
+            txMonth = int.parse(parts[1]);
+          } catch (_) {}
+        }
+        if (txMonth == 0 && data['createdAt'] is Timestamp) {
+          final dt = (data['createdAt'] as Timestamp).toDate();
+          txMonth = dt.month;
+          txYear = dt.year;
+        }
+
+        if (isIncome) {
+          incomeTotal += amount;
+          if (txMonth == currentMonth && txYear == currentYear) {
+            monthIncome += amount;
+          }
+        } else {
+          expenseTotal += amount;
+          if (txMonth == currentMonth && txYear == currentYear) {
+            monthExpense += amount;
+          }
+        }
       }
-    }
 
-    setState(() {
-      totalExpenses = expenseTotal;
-      totalIncome = incomeTotal;
-    });
+      if (mounted) {
+        setState(() {
+          totalExpenses = expenseTotal;
+          totalIncome = incomeTotal;
+          monthlyExpenses = monthExpense;
+          monthlyIncomeTotal = monthIncome;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading totals: $e');
+    }
   }
 
   void _showSetBalanceDialog() {
@@ -358,7 +399,7 @@ class _HomeViewState extends State<HomeView> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  "₹ ${_formatAmount(totalExpenses)}",
+                                  "₹ ${_formatAmount(monthlyExpenses)}",
                                   style: TextStyle(
                                     color: Colors.red,
                                     fontSize: 20,
@@ -368,40 +409,37 @@ class _HomeViewState extends State<HomeView> {
                               ],
                             ),
                             // Income
-                            GestureDetector(
-                              onTap: _showSetBalanceDialog,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        "${_getMonthAbbr()}·Income",
-                                        style: TextStyle(
-                                          color: TColor.primary500.withOpacity(0.7),
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      "${_getMonthAbbr()}·Income",
+                                      style: TextStyle(
+                                        color: TColor.primary500.withOpacity(0.7),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
                                       ),
-                                      const SizedBox(width: 4),
-                                      Icon(
-                                        Icons.arrow_drop_up,
-                                        size: 16,
-                                        color: TColor.primary500,
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    "₹ ${_formatAmount(monthlyIncome)}",
-                                    style: TextStyle(
-                                      color: TColor.primary500,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
                                     ),
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      Icons.arrow_drop_up,
+                                      size: 16,
+                                      color: TColor.primary500,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "₹ ${_formatAmount(monthlyIncomeTotal)}",
+                                  style: TextStyle(
+                                    color: TColor.primary500,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -430,7 +468,7 @@ class _HomeViewState extends State<HomeView> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    "₹ ${_formatAmount((monthlyIncome + totalIncome) - totalExpenses)}",
+                                    "₹ ${_formatAmount(totalIncome - totalExpenses)}",
                                     style: TextStyle(
                                       color: TColor.primary500,
                                       fontSize: 16,
@@ -459,9 +497,9 @@ class _HomeViewState extends State<HomeView> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    "₹ ${_formatAmount(monthlyIncome - totalExpenses)}",
+                                    "₹ ${_formatAmount(monthlyIncomeTotal - monthlyExpenses)}",
                                     style: TextStyle(
-                                      color: (monthlyIncome - totalExpenses) >= 0
+                                      color: (monthlyIncomeTotal - monthlyExpenses) >= 0
                                           ? TColor.primary500
                                           : Colors.redAccent,
                                       fontSize: 16,

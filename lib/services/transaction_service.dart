@@ -18,6 +18,23 @@ class TransactionService {
 
     final uid = user.uid;
 
+    // Parse selected date and combine with current time
+    DateTime createdDateTime = DateTime.now();
+    try {
+      final parts = date.split('-');
+      if (parts.length == 3) {
+        final now = DateTime.now();
+        createdDateTime = DateTime(
+          int.parse(parts[0]),
+          int.parse(parts[1]),
+          int.parse(parts[2]),
+          now.hour,
+          now.minute,
+          now.second,
+        );
+      }
+    } catch (_) {}
+
     // Add transaction
     await _db.collection('users').doc(uid).collection('transactions').add({
       'amount': amount,
@@ -25,7 +42,7 @@ class TransactionService {
       'date': date,
       'note': note ?? '',
       'isIncome': false,
-      'createdAt': Timestamp.now(),
+      'createdAt': Timestamp.fromDate(createdDateTime),
     });
 
     // Update budget spent amount

@@ -15,13 +15,13 @@ class AddTransactionView extends StatefulWidget {
 
 class _AddTransactionViewState extends State<AddTransactionView> {
   TextEditingController txtAmount = TextEditingController();
-  TextEditingController txtDate = TextEditingController();
   TextEditingController txtNote = TextEditingController();
 
   String? selectedCategory;
   List<String> categories = [];
   bool isCategoriesLoading = true;
   bool isLoading = false;
+  DateTime? _selectedDate;
 
   final TransactionService _transactionService = TransactionService();
   final BudgetService _budgetService = BudgetService();
@@ -58,7 +58,6 @@ class _AddTransactionViewState extends State<AddTransactionView> {
   void dispose() {
     _categorySub?.cancel();
     txtAmount.dispose();
-    txtDate.dispose();
     txtNote.dispose();
     super.dispose();
   }
@@ -92,8 +91,8 @@ class _AddTransactionViewState extends State<AddTransactionView> {
       await _transactionService.addTransaction(
         amount: amount,
         category: selectedCategory!,
-        date: txtDate.text.isNotEmpty
-            ? txtDate.text
+        date: _selectedDate != null
+            ? '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}'
             : DateTime.now().toString().split(' ')[0],
         note: txtNote.text,
       );
@@ -219,10 +218,58 @@ class _AddTransactionViewState extends State<AddTransactionView> {
                       ),
           ),
           const SizedBox(height: 15),
-          RoundTextField(
-            title: "Date",
-            controller: txtDate,
-            keyboardType: TextInputType.datetime,
+          Text(
+            "Date",
+            style: TextStyle(color: TColor.gray30, fontSize: 12),
+          ),
+          const SizedBox(height: 5),
+          GestureDetector(
+            onTap: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: _selectedDate ?? DateTime.now(),
+                firstDate: DateTime(2020),
+                lastDate: DateTime.now(),
+                builder: (context, child) {
+                  return Theme(
+                    data: ThemeData.dark().copyWith(
+                      colorScheme: ColorScheme.dark(
+                        primary: TColor.secondary,
+                        surface: TColor.gray80,
+                      ),
+                    ),
+                    child: child!,
+                  );
+                },
+              );
+              if (picked != null) {
+                setState(() => _selectedDate = picked);
+              }
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
+              decoration: BoxDecoration(
+                color: TColor.gray60.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _selectedDate != null
+                          ? '${_selectedDate!.day.toString().padLeft(2, '0')}/${_selectedDate!.month.toString().padLeft(2, '0')}/${_selectedDate!.year}'
+                          : 'Select date',
+                      style: TextStyle(
+                        color: _selectedDate != null ? TColor.white : TColor.gray30,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.calendar_today, color: TColor.gray30, size: 18),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 15),
           RoundTextField(title: "Note", controller: txtNote),

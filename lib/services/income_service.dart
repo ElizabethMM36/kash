@@ -91,6 +91,18 @@ class IncomeService {
         'monthlyIncome': amount,
         'incomeFrequency': (data['frequency'] ?? 'Monthly').toString().toLowerCase(),
       });
+
+      // Also add as a transaction so it shows in the expense log
+      final nowDt = DateTime.now();
+      final dateStr = '${nowDt.year}-${nowDt.month.toString().padLeft(2, '0')}-${nowDt.day.toString().padLeft(2, '0')}';
+      await _db.collection('users').doc(_uid).collection('transactions').add({
+        'amount': amount,
+        'category': data['source'] ?? 'Salary',
+        'date': dateStr,
+        'note': data['source'] ?? 'Salary',
+        'isIncome': true,
+        'createdAt': now,
+      });
     }
   }
 
