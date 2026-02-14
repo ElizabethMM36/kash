@@ -16,49 +16,49 @@ class _ExpenseViewState extends State<ExpenseView> {
       "date": "Today, 10:00 AM",
       "amount": "-\$15.00",
       "isIncome": false,
-      "color": Colors.red
+      "color": Colors.red,
     },
     {
       "name": "Salary",
       "date": "Yesterday, 05:00 PM",
       "amount": "+\$3,500.00",
       "isIncome": true,
-      "color": Colors.green
+      "color": Colors.green,
     },
     {
       "name": "Grocery Shopping",
       "date": "Oct 24, 02:30 PM",
       "amount": "-\$85.50",
       "isIncome": false,
-      "color": Colors.orange
+      "color": Colors.orange,
     },
     {
       "name": "Electric Bill",
       "date": "Oct 20, 09:00 AM",
       "amount": "-\$120.00",
       "isIncome": false,
-      "color": Colors.blue
+      "color": Colors.blue,
     },
     {
       "name": "Freelance Work",
       "date": "Oct 18, 11:00 AM",
       "amount": "+\$450.00",
       "isIncome": true,
-      "color": Colors.purple
+      "color": Colors.purple,
     },
     {
       "name": "Dining Out",
       "date": "Oct 15, 08:30 PM",
       "amount": "-\$65.00",
       "isIncome": false,
-      "color": Colors.pink
+      "color": Colors.pink,
     },
-     {
+    {
       "name": "Gym Memebership",
       "date": "Oct 12, 10:30 AM",
       "amount": "-\$35.00",
       "isIncome": false,
-      "color": Colors.teal
+      "color": Colors.teal,
     },
   ];
 
@@ -83,7 +83,7 @@ class _ExpenseViewState extends State<ExpenseView> {
           IconButton(
             onPressed: () {},
             icon: Icon(Icons.more_horiz, color: TColor.white),
-          )
+          ),
         ],
       ),
       body: Column(
@@ -119,7 +119,7 @@ class _ExpenseViewState extends State<ExpenseView> {
                       ),
                     ),
                   ),
-                   Expanded(
+                  Expanded(
                     child: InkWell(
                       onTap: () {},
                       child: Container(
@@ -187,7 +187,10 @@ class _ExpenseViewState extends State<ExpenseView> {
                             ),
                             Text(
                               tObj["date"],
-                              style: TextStyle(color: TColor.gray30, fontSize: 12),
+                              style: TextStyle(
+                                color: TColor.gray30,
+                                fontSize: 12,
+                              ),
                             ),
                           ],
                         ),
@@ -195,7 +198,9 @@ class _ExpenseViewState extends State<ExpenseView> {
                       Text(
                         tObj["amount"],
                         style: TextStyle(
-                          color: tObj["isIncome"] ? Colors.greenAccent : TColor.white,
+                          color: tObj["isIncome"]
+                              ? Colors.greenAccent
+                              : TColor.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
