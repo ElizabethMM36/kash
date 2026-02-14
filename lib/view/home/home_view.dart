@@ -74,10 +74,7 @@ class _HomeViewState extends State<HomeView> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: TColor.gray80,
-        title: Text(
-          'Set Your Balance',
-          style: TextStyle(color: TColor.white),
-        ),
+        title: Text('Set Your Balance', style: TextStyle(color: TColor.white)),
         content: TextField(
           controller: balanceController,
           keyboardType: TextInputType.number,
@@ -313,12 +310,20 @@ class _HomeViewState extends State<HomeView> {
                                       Text(
                                         "Balance",
                                         style: TextStyle(
-                                          color: TColor.primary500.withOpacity(0.7),
+                                          color: TColor.primary500.withOpacity(
+                                            0.7,
+                                          ),
                                           fontSize: 12,
                                         ),
                                       ),
                                       const SizedBox(width: 4),
-                                      Icon(Icons.edit, size: 12, color: TColor.primary500.withOpacity(0.7)),
+                                      Icon(
+                                        Icons.edit,
+                                        size: 12,
+                                        color: TColor.primary500.withOpacity(
+                                          0.7,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                   Text(
@@ -386,14 +391,7 @@ class _HomeViewState extends State<HomeView> {
                           );
                         },
                       ),
-                      _buildQuickAction(
-                        icon: Icons.edit_note_rounded,
-                        title: "Edit Budget",
-                        onTap: () {
-                          // Ideally switch to Budget Tab (Index 2)
-                          // For now, doing nothing or we can push the view
-                        },
-                      ),
+
                       _buildQuickAction(
                         icon: Icons.call_split_rounded,
                         title: "Split",
@@ -458,15 +456,25 @@ class _HomeViewState extends State<HomeView> {
                     child: Center(
                       child: Column(
                         children: [
-                          Icon(Icons.receipt_long, color: TColor.gray30, size: 48),
+                          Icon(
+                            Icons.receipt_long,
+                            color: TColor.gray30,
+                            size: 48,
+                          ),
                           const SizedBox(height: 10),
                           Text(
                             "No transactions yet",
-                            style: TextStyle(color: TColor.gray30, fontSize: 14),
+                            style: TextStyle(
+                              color: TColor.gray30,
+                              fontSize: 14,
+                            ),
                           ),
                           Text(
                             "Tap 'Add Expense' to add your first transaction",
-                            style: TextStyle(color: TColor.gray30, fontSize: 12),
+                            style: TextStyle(
+                              color: TColor.gray30,
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),
@@ -533,9 +541,13 @@ class _HomeViewState extends State<HomeView> {
                             ),
                           ),
                           Text(
-                            isIncome ? "+₹${amount.toStringAsFixed(2)}" : "-₹${amount.toStringAsFixed(2)}",
+                            isIncome
+                                ? "+₹${amount.toStringAsFixed(2)}"
+                                : "-₹${amount.toStringAsFixed(2)}",
                             style: TextStyle(
-                              color: isIncome ? Colors.greenAccent : TColor.white,
+                              color: isIncome
+                                  ? Colors.greenAccent
+                                  : TColor.white,
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
