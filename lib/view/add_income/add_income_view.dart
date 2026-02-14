@@ -25,12 +25,17 @@ class _AddIncomeViewState extends State<AddIncomeView> {
   Future<void> _saveIncomeProfile() async {
     if (_isSaving) return;
 
+    debugPrint('=== INCOME SAVE: Starting save ===');
+    debugPrint('=== INCOME SAVE: Data to save: $_incomeData ===');
+
     setState(() {
       _isSaving = true;
     });
 
     try {
       await _incomeService.saveIncomeProfile(_incomeData);
+
+      debugPrint('=== INCOME SAVE: SUCCESS ===');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -41,7 +46,9 @@ class _AddIncomeViewState extends State<AddIncomeView> {
         );
         Navigator.pop(context);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('=== INCOME SAVE: ERROR: $e ===');
+      debugPrint('=== INCOME SAVE: STACK: $stackTrace ===');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
