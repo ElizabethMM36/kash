@@ -17,6 +17,7 @@ class _HomeViewState extends State<HomeView> {
   String userName = "Loading...";
   double monthlyIncome = 0;
   double totalExpenses = 0;
+  double totalIncome = 0;
   final TransactionService _transactionService = TransactionService();
 
   void loadUserData() async {
@@ -50,18 +51,22 @@ class _HomeViewState extends State<HomeView> {
         .collection('transactions')
         .get();
 
-    double total = 0;
+    double expenseTotal = 0;
+    double incomeTotal = 0;
     for (var doc in snapshot.docs) {
       final data = doc.data();
       final amount = (data['amount'] ?? 0).toDouble();
       final isIncome = data['isIncome'] ?? false;
-      if (!isIncome) {
-        total += amount;
+      if (isIncome) {
+        incomeTotal += amount;
+      } else {
+        expenseTotal += amount;
       }
     }
 
     setState(() {
-      totalExpenses = total;
+      totalExpenses = expenseTotal;
+      totalIncome = incomeTotal;
     });
   }
 
@@ -355,7 +360,7 @@ class _HomeViewState extends State<HomeView> {
                                 Text(
                                   "₹ ${_formatAmount(totalExpenses)}",
                                   style: TextStyle(
-                                    color: Colors.redAccent.shade100,
+                                    color: Colors.red,
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -400,27 +405,73 @@ class _HomeViewState extends State<HomeView> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
-                        // Balance Row
-                        Row(
-                          children: [
-                            Text(
-                              "₹ ${_formatAmount(monthlyIncome - totalExpenses)}",
-                              style: TextStyle(
-                                color: TColor.primary500.withOpacity(0.6),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
+                        const SizedBox(height: 16),
+                        // Bank Balance & Month Balance Row
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: TColor.primary500.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // Bank Balance
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Bank Balance",
+                                    style: TextStyle(
+                                      color: TColor.primary500.withOpacity(0.6),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    "₹ ${_formatAmount((monthlyIncome + totalIncome) - totalExpenses)}",
+                                    style: TextStyle(
+                                      color: TColor.primary500,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              "≡",
-                              style: TextStyle(
-                                color: TColor.primary500.withOpacity(0.5),
-                                fontSize: 14,
+                              // Divider
+                              Container(
+                                width: 1,
+                                height: 30,
+                                color: TColor.primary500.withOpacity(0.2),
                               ),
-                            ),
-                          ],
+                              // Month Balance
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    "${_getMonthAbbr()} Balance",
+                                    style: TextStyle(
+                                      color: TColor.primary500.withOpacity(0.6),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    "₹ ${_formatAmount(monthlyIncome - totalExpenses)}",
+                                    style: TextStyle(
+                                      color: (monthlyIncome - totalExpenses) >= 0
+                                          ? TColor.primary500
+                                          : Colors.redAccent,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
