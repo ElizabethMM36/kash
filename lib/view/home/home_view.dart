@@ -168,6 +168,34 @@ class _HomeViewState extends State<HomeView> {
     }
   }
 
+  String _getMonthAbbr() {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[DateTime.now().month - 1];
+  }
+
+  String _formatAmount(double amount) {
+    if (amount < 0) {
+      return "-${_formatAmount(amount.abs())}";
+    }
+    if (amount >= 100000) {
+      return "${(amount / 100000).toStringAsFixed(1)}L";
+    }
+    // Format with commas
+    String str = amount.toStringAsFixed(0);
+    final parts = <String>[];
+    int count = 0;
+    for (int i = str.length - 1; i >= 0; i--) {
+      parts.insert(0, str[i]);
+      count++;
+      if (count == 3 && i > 0) {
+        parts.insert(0, ',');
+        count = 0;
+      }
+    }
+    return parts.join();
+  }
+
   @override
   Widget build(BuildContext context) {
     var media = MediaQuery.sizeOf(context);
@@ -297,79 +325,102 @@ class _HomeViewState extends State<HomeView> {
                           ),
                         ),
                         const SizedBox(height: 20),
+                        // Monthly Expenses & Income Row
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
+                            // Expenses
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      "${_getMonthAbbr()}·Expenses",
+                                      style: TextStyle(
+                                        color: TColor.primary500.withOpacity(0.7),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      Icons.arrow_drop_down,
+                                      size: 16,
+                                      color: Colors.redAccent,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "₹ ${_formatAmount(totalExpenses)}",
+                                  style: TextStyle(
+                                    color: Colors.redAccent.shade100,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            // Income
                             GestureDetector(
                               onTap: _showSetBalanceDialog,
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Row(
                                     children: [
                                       Text(
-                                        "Balance",
+                                        "${_getMonthAbbr()}·Income",
                                         style: TextStyle(
-                                          color: TColor.primary500.withOpacity(
-                                            0.7,
-                                          ),
+                                          color: TColor.primary500.withOpacity(0.7),
                                           fontSize: 12,
+                                          fontWeight: FontWeight.w500,
                                         ),
                                       ),
                                       const SizedBox(width: 4),
                                       Icon(
-                                        Icons.edit,
-                                        size: 12,
-                                        color: TColor.primary500.withOpacity(
-                                          0.7,
-                                        ),
+                                        Icons.arrow_drop_up,
+                                        size: 16,
+                                        color: TColor.primary500,
                                       ),
                                     ],
                                   ),
+                                  const SizedBox(height: 4),
                                   Text(
-                                    "₹ ${(monthlyIncome - totalExpenses).toStringAsFixed(2)}",
+                                    "₹ ${_formatAmount(monthlyIncome)}",
                                     style: TextStyle(
                                       color: TColor.primary500,
-                                      fontSize: 22,
+                                      fontSize: 20,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  "Monthly Limit",
-                                  style: TextStyle(
-                                    color: TColor.primary500.withOpacity(0.7),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                Text(
-                                  "\$ 5,000 / \$ 10,000",
-                                  style: TextStyle(
-                                    color: TColor.primary500,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
                           ],
                         ),
-                        const SizedBox(height: 10),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(2),
-                          child: LinearProgressIndicator(
-                            value: 0.5,
-                            minHeight: 4,
-                            backgroundColor: TColor.white.withOpacity(0.3),
-                            valueColor: AlwaysStoppedAnimation(
-                              TColor.primary500,
+                        const SizedBox(height: 12),
+                        // Balance Row
+                        Row(
+                          children: [
+                            Text(
+                              "₹ ${_formatAmount(monthlyIncome - totalExpenses)}",
+                              style: TextStyle(
+                                color: TColor.primary500.withOpacity(0.6),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 4),
+                            Text(
+                              "≡",
+                              style: TextStyle(
+                                color: TColor.primary500.withOpacity(0.5),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
