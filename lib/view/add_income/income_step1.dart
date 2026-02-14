@@ -4,7 +4,8 @@ import 'package:kash/common_widget/round_textfield.dart';
 
 class IncomeStep1 extends StatefulWidget {
   final VoidCallback onNext;
-  const IncomeStep1({super.key, required this.onNext});
+  final Function(Map<String, dynamic>) onDataChanged;
+  const IncomeStep1({super.key, required this.onNext, required this.onDataChanged});
 
   @override
   State<IncomeStep1> createState() => _IncomeStep1State();
@@ -15,6 +16,24 @@ class _IncomeStep1State extends State<IncomeStep1> {
   TextEditingController txtAmount = TextEditingController();
   String selectedFrequency = "Monthly";
   TextEditingController txtDate = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    txtAmount.addListener(_notifyParent);
+    txtDate.addListener(_notifyParent);
+    // Send initial defaults
+    WidgetsBinding.instance.addPostFrameCallback((_) => _notifyParent());
+  }
+
+  void _notifyParent() {
+    widget.onDataChanged({
+      'source': selectedSource,
+      'amount': double.tryParse(txtAmount.text) ?? 0,
+      'frequency': selectedFrequency,
+      'expectedDate': txtDate.text,
+    });
+  }
 
   final List<String> sources = ["Salary", "Freelance", "Business", "Allowance", "Other"];
   final List<String> frequencies = ["Monthly", "Weekly", "Bi-weekly", "One-time"];
@@ -50,6 +69,7 @@ class _IncomeStep1State extends State<IncomeStep1> {
               setState(() {
                 selectedSource = val;
               });
+              _notifyParent();
             })).toList(),
           ),
           
@@ -72,6 +92,7 @@ class _IncomeStep1State extends State<IncomeStep1> {
               setState(() {
                 selectedFrequency = val;
               });
+              _notifyParent();
             })).toList(),
           ),
 

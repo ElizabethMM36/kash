@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:kash/services/budget_service.dart';
 
 class TransactionService {
   final _db = FirebaseFirestore.instance;
+  final _budgetService = BudgetService();
 
   /// Add a new transaction
   Future<void> addTransaction({
@@ -26,6 +28,9 @@ class TransactionService {
       'isIncome': false,
       'createdAt': Timestamp.now(),
     });
+
+    // Update budget spent amount
+    await _budgetService.updateSpentByCategory(category, amount);
   }
 
   /// Get recent transactions stream (limit 5)

@@ -4,7 +4,8 @@ import 'package:kash/common/color_extension.dart';
 class IncomeStep3 extends StatefulWidget {
   final VoidCallback onFinish;
   final VoidCallback onBack;
-  const IncomeStep3({super.key, required this.onFinish, required this.onBack});
+  final Function(Map<String, dynamic>) onDataChanged;
+  const IncomeStep3({super.key, required this.onFinish, required this.onBack, required this.onDataChanged});
 
   @override
   State<IncomeStep3> createState() => _IncomeStep3State();
@@ -17,6 +18,19 @@ class _IncomeStep3State extends State<IncomeStep3> {
 
   // Risk Comfort
   bool riskComfort = true; // Yes I manage
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _notifyParent());
+  }
+
+  void _notifyParent() {
+    widget.onDataChanged({
+      'financialPriority': priority,
+      'riskComfort': riskComfort,
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +65,7 @@ class _IncomeStep3State extends State<IncomeStep3> {
           const SizedBox(height: 25),
           
           // 8. Financial Priority
-          Text("What’s important to you now?", style: TextStyle(color: TColor.gray30, fontSize: 14)),
+          Text("What's important to you now?", style: TextStyle(color: TColor.gray30, fontSize: 14)),
           const SizedBox(height: 10),
           Wrap(
             spacing: 10,
@@ -60,6 +74,7 @@ class _IncomeStep3State extends State<IncomeStep3> {
               setState(() {
                 priority = val;
               });
+              _notifyParent();
             })).toList(),
           ),
 
@@ -132,6 +147,7 @@ class _IncomeStep3State extends State<IncomeStep3> {
         setState(() {
           riskComfort = value;
         });
+        _notifyParent();
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 15),

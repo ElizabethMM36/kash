@@ -135,6 +135,22 @@ class BudgetService {
     });
   }
 
+  /// Update spent amount for a category by name (for transactions)
+  Future<void> updateSpentByCategory(String categoryName, double amount) async {
+    if (_uid == null) return;
+
+    final snapshot = await _budgetsRef.where('category', isEqualTo: categoryName).get();
+    
+    final batch = _db.batch();
+    for (var doc in snapshot.docs) {
+      batch.update(doc.reference, {
+        'spent': FieldValue.increment(amount),
+        'updatedAt': Timestamp.now(),
+      });
+    }
+    await batch.commit();
+  }
+
   /// Reset all budgets to defaults
   Future<void> resetToDefaults() async {
     if (_uid == null) throw Exception("User not logged in");

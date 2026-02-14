@@ -4,7 +4,8 @@ import 'package:kash/common/color_extension.dart';
 class IncomeStep2 extends StatefulWidget {
   final VoidCallback onNext;
   final VoidCallback onBack;
-  const IncomeStep2({super.key, required this.onNext, required this.onBack});
+  final Function(Map<String, dynamic>) onDataChanged;
+  const IncomeStep2({super.key, required this.onNext, required this.onBack, required this.onDataChanged});
 
   @override
   State<IncomeStep2> createState() => _IncomeStep2State();
@@ -30,8 +31,31 @@ class _IncomeStep2State extends State<IncomeStep2> {
   final List<String> styles = [
     "I track every rupee carefully",
     "I spend freely but within limits",
-    "I don’t usually track spending",
+    "I don't usually track spending",
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _notifyParent());
+  }
+
+  void _notifyParent() {
+    // Build fixed expenses map from controllers
+    final Map<String, double> fixedExpenses = {};
+    for (var key in selectedFixed) {
+      final controller = fixedAmountControllers[key];
+      if (controller != null) {
+        fixedExpenses[key] = double.tryParse(controller.text) ?? 0;
+      }
+    }
+
+    widget.onDataChanged({
+      'fixedExpenses': fixedExpenses,
+      'savingsPercentage': savingPercentage,
+      'spendingStyle': spendingStyle,
+    });
+  }
 
   @override
   void dispose() {
@@ -132,6 +156,7 @@ class _IncomeStep2State extends State<IncomeStep2> {
                               child: TextField(
                                 controller: fixedAmountControllers[key],
                                 keyboardType: TextInputType.number,
+                                onChanged: (_) => _notifyParent(),
                                 style: TextStyle(
                                   color: TColor.white,
                                   fontSize: 14,
@@ -186,6 +211,7 @@ class _IncomeStep2State extends State<IncomeStep2> {
               setState(() {
                 savingPercentage = val;
               });
+              _notifyParent();
             },
           ),
 
@@ -241,6 +267,7 @@ class _IncomeStep2State extends State<IncomeStep2> {
             fixedAmountControllers.remove(label);
           }
         });
+        _notifyParent();
       },
       backgroundColor: TColor.gray60.withOpacity(0.2),
       selectedColor: TColor.secondary,
@@ -263,6 +290,7 @@ class _IncomeStep2State extends State<IncomeStep2> {
         setState(() {
           spendingStyle = label;
         });
+        _notifyParent();
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
