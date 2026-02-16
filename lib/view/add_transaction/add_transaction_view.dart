@@ -22,6 +22,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
   bool isCategoriesLoading = true;
   bool isLoading = false;
   DateTime? _selectedDate;
+  bool isDebit = true; // true = Debit, false = Credit
 
   final TransactionService _transactionService = TransactionService();
   final BudgetService _budgetService = BudgetService();
@@ -78,7 +79,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
       return;
     }
 
-    if (selectedCategory == null) {
+    if (isDebit && selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please select a category")),
       );
@@ -90,11 +91,12 @@ class _AddTransactionViewState extends State<AddTransactionView> {
     try {
       await _transactionService.addTransaction(
         amount: amount,
-        category: selectedCategory!,
+        category: isDebit ? selectedCategory! : 'Income',
         date: _selectedDate != null
             ? '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}'
             : DateTime.now().toString().split(' ')[0],
         note: txtNote.text,
+        isIncome: !isDebit,
       );
 
       if (mounted) {
@@ -149,74 +151,135 @@ class _AddTransactionViewState extends State<AddTransactionView> {
             ),
           ),
           const SizedBox(height: 20),
+
+          // Debit / Credit Toggle
+          Container(
+            decoration: BoxDecoration(
+              color: TColor.gray60.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => isDebit = true),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isDebit ? Colors.redAccent : Colors.transparent,
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Center(
+                        child: Text(
+                          "Debit",
+                          style: TextStyle(
+                            color: isDebit ? Colors.white : TColor.gray30,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => isDebit = false),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: !isDebit ? Colors.green : Colors.transparent,
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Center(
+                        child: Text(
+                          "Credit",
+                          style: TextStyle(
+                            color: !isDebit ? Colors.white : TColor.gray30,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 15),
+
           RoundTextField(
             title: "Amount",
             controller: txtAmount,
             keyboardType: TextInputType.number,
           ),
-          const SizedBox(height: 15),
-          Text(
-            "Category",
-            style: TextStyle(color: TColor.gray30, fontSize: 12),
-          ),
-          const SizedBox(height: 5),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15),
-            decoration: BoxDecoration(
-              color: TColor.gray60.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(15),
+          // Show category dropdown only for Debit
+          if (isDebit) ...[
+            const SizedBox(height: 15),
+            Text(
+              "Category",
+              style: TextStyle(color: TColor.gray30, fontSize: 12),
             ),
-            child: isCategoriesLoading
-                ? Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: TColor.gray30,
+            const SizedBox(height: 5),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              decoration: BoxDecoration(
+                color: TColor.gray60.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: isCategoriesLoading
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: TColor.gray30,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            "Loading categories...",
+                            style: TextStyle(color: TColor.gray30, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    )
+                  : categories.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          child: Text(
+                            "No categories. Set up budgets first.",
+                            style: TextStyle(color: TColor.gray30, fontSize: 14),
+                          ),
+                        )
+                      : DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: selectedCategory,
+                            isExpanded: true,
+                            dropdownColor: TColor.gray80,
+                            icon:
+                                Icon(Icons.arrow_drop_down, color: TColor.white),
+                            style: TextStyle(color: TColor.white, fontSize: 14),
+                            items: categories.map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            onChanged: (newValue) {
+                              setState(() {
+                                selectedCategory = newValue!;
+                              });
+                            },
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Text(
-                          "Loading categories...",
-                          style: TextStyle(color: TColor.gray30, fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  )
-                : categories.isEmpty
-                    ? Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        child: Text(
-                          "No categories. Set up budgets first.",
-                          style: TextStyle(color: TColor.gray30, fontSize: 14),
-                        ),
-                      )
-                    : DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: selectedCategory,
-                          isExpanded: true,
-                          dropdownColor: TColor.gray80,
-                          icon:
-                              Icon(Icons.arrow_drop_down, color: TColor.white),
-                          style: TextStyle(color: TColor.white, fontSize: 14),
-                          items: categories.map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
-                          onChanged: (newValue) {
-                            setState(() {
-                              selectedCategory = newValue!;
-                            });
-                          },
-                        ),
-                      ),
-          ),
+            ),
+          ],
           const SizedBox(height: 15),
           Text(
             "Date",

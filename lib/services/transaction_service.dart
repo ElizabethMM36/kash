@@ -12,6 +12,7 @@ class TransactionService {
     required String category,
     required String date,
     String? note,
+    bool isIncome = false,
   }) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception("User not logged in");
@@ -41,12 +42,14 @@ class TransactionService {
       'category': category,
       'date': date,
       'note': note ?? '',
-      'isIncome': false,
+      'isIncome': isIncome,
       'createdAt': Timestamp.fromDate(createdDateTime),
     });
 
-    // Update budget spent amount
-    await _budgetService.updateSpentByCategory(category, amount);
+    // Update budget spent amount only for debit (expense) transactions
+    if (!isIncome) {
+      await _budgetService.updateSpentByCategory(category, amount);
+    }
   }
 
   /// Get recent transactions stream (limit 5)
