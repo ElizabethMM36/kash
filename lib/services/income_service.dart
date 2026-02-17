@@ -27,6 +27,15 @@ class IncomeService {
     return snapshot.docs.isNotEmpty;
   }
 
+  /// Get the current (latest) income/budget profile, or null if none exists
+  Future<Map<String, dynamic>?> getCurrentProfile() async {
+    if (_uid == null) return null;
+    final snapshot = await _incomeRef.limit(1).get();
+    if (snapshot.docs.isEmpty) return null;
+    final doc = snapshot.docs.first;
+    return {'id': doc.id, ...doc.data()};
+  }
+
   /// Save or update income profile (upsert: create if none exists, update if one already does)
   Future<void> saveIncomeProfile(Map<String, dynamic> data) async {
     if (_uid == null) throw Exception("User not logged in");
