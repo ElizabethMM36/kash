@@ -4,6 +4,7 @@ import 'package:kash/common/color_extension.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:kash/view/login/welcome_view.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:kash/view/add_income/add_income_view.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -131,19 +132,21 @@ class _ProfileViewState extends State<ProfileView> {
             const SizedBox(height: 20),
 
             _buildSettingTile(
-              title: "General",
-              icon: Icons.settings_outlined,
-              onTap: () {},
-            ),
-            _buildSettingTile(
-              title: "Currency",
-              icon: Icons.currency_exchange_rounded,
-              onTap: () {},
-            ),
-            _buildSettingTile(
-              title: "Export Data",
-              icon: Icons.file_upload_outlined,
-              onTap: () {},
+              title: "EDIT YOUR BUDGET PLAN",
+              icon: Icons.edit_calendar_rounded,
+              onTap: () {
+                showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => Padding(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom,
+                    ),
+                    child: const AddIncomeView(),
+                  ),
+                );
+              },
             ),
             _buildSettingTile(
               title: "Log Out",
