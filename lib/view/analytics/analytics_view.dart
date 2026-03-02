@@ -1,343 +1,408 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:kash/common/color_extension.dart';
+import 'package:kash/services/analytics_service.dart';
 
-class AnalyticsView extends StatefulWidget {
-  const AnalyticsView({super.key});
+class AnalyticsScreen extends StatefulWidget {
+  const AnalyticsScreen({super.key});
 
   @override
-  State<AnalyticsView> createState() => _AnalyticsViewState();
+  State<AnalyticsScreen> createState() => _AnalyticsScreenState();
 }
 
-class _AnalyticsViewState extends State<AnalyticsView> {
-  int touchedIndex = -1;
-  String selectedTimeFilter = "This Month";
-  
-  // Category data - sorted by spending (descending)
-  final List<Map<String, dynamic>> categoryData = [
-    {"name": "Grocery", "amount": 5526.0, "percent": 30, "color": const Color(0xFF4CAF50)},
-    {"name": "Bill", "amount": 4605.0, "percent": 25, "color": const Color(0xFF9C27B0)},
-    {"name": "Transport", "amount": 3684.0, "percent": 20, "color": const Color(0xFF2196F3)},
-    {"name": "Entertainment", "amount": 2763.0, "percent": 15, "color": const Color(0xFFF44336)},
-    {"name": "Medical", "amount": 1842.0, "percent": 10, "color": const Color(0xFFFF9800)},
-  ];
-  
-  double get totalSpent => categoryData.fold(0, (sum, item) => sum + (item["amount"] as double));
+class _AnalyticsScreenState extends State<AnalyticsScreen> {
+  final AnalyticsService _service = AnalyticsService();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: TColor.primaryBg,
+      backgroundColor: TColor.gray,
       appBar: AppBar(
-        backgroundColor: TColor.primaryBg,
+        backgroundColor: TColor.gray80,
         elevation: 0,
-        centerTitle: true,
-        title: Text(
-          "Analytics",
-          style: TextStyle(
-            color: TColor.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: Text("Analytics", style: TextStyle(color: TColor.white)),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // 1️⃣ TIME FILTER DROPDOWN
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-              decoration: BoxDecoration(
-                color: TColor.gray80,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: TColor.border.withOpacity(0.3)),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: selectedTimeFilter,
-                  icon: Icon(Icons.keyboard_arrow_down, color: TColor.secondary),
-                  dropdownColor: TColor.gray70,
-                  style: TextStyle(color: TColor.white, fontSize: 14, fontWeight: FontWeight.w600),
-                  isExpanded: true,
-                  items: ["This Week", "This Month", "Last Month", "Custom Range"]
-                      .map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      selectedTimeFilter = newValue!;
-                    });
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            
-            // 2️⃣ DONUT CHART WITH CENTER TOTAL
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: TColor.gray80,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    "Spending by Category",
-                    style: TextStyle(
-                      color: TColor.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    height: 220,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        PieChart(
-                          PieChartData(
-                            pieTouchData: PieTouchData(
-                              touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                                setState(() {
-                                  if (!event.isInterestedForInteractions ||
-                                      pieTouchResponse == null ||
-                                      pieTouchResponse.touchedSection == null) {
-                                    touchedIndex = -1;
-                                    return;
-                                  }
-                                  touchedIndex =
-                                      pieTouchResponse.touchedSection!.touchedSectionIndex;
-                                });
-                              },
-                            ),
-                            borderData: FlBorderData(show: false),
-                            sectionsSpace: 2,
-                            centerSpaceRadius: 55,
-                            sections: showingSections(),
-                          ),
-                        ),
-                        // CENTER TOTAL
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              "₹${totalSpent.toStringAsFixed(0)}",
-                              style: TextStyle(
-                                color: TColor.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              "Total spent",
-                              style: TextStyle(
-                                color: TColor.gray30,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            
-            // 6️⃣ INSIGHT CARD
-            Container(
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [TColor.secondary.withOpacity(0.2), TColor.secondary.withOpacity(0.05)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: TColor.secondary.withOpacity(0.3)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: TColor.secondary.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text("🍔", style: const TextStyle(fontSize: 20)),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "${categoryData[0]["name"]} is your highest spending",
-                          style: TextStyle(
-                            color: TColor.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          "₹${categoryData[0]["amount"].toStringAsFixed(0)} this month (${categoryData[0]["percent"]}%)",
-                          style: TextStyle(
-                            color: TColor.gray30,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            
-            // 3️⃣ 4️⃣ 5️⃣ CLICKABLE CATEGORY LIST (Sorted, with Amount + %)
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: TColor.gray80,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Categories",
-                    style: TextStyle(
-                      color: TColor.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  ...categoryData.asMap().entries.map((entry) {
-                    int index = entry.key;
-                    var cat = entry.value;
-                    bool isSelected = touchedIndex == index;
-                    return _buildCategoryItem(
-                      color: cat["color"],
-                      title: cat["name"],
-                      amount: cat["amount"],
-                      percent: cat["percent"],
-                      isSelected: isSelected,
-                      onTap: () {
-                        setState(() {
-                          touchedIndex = touchedIndex == index ? -1 : index;
-                        });
-                      },
-                    );
-                  }),
-                ],
-              ),
-            ),
-            const SizedBox(height: 80),
+            _buildExpensePieChart(),
+            const SizedBox(height: 30),
+            _buildMonthlyBarChart(),
+            const SizedBox(height: 30),
+            _buildIncomeVsExpenseChart(),
+            const SizedBox(height: 30),
+            _buildCategoryAnalytics(),
           ],
         ),
       ),
     );
   }
 
-  List<PieChartSectionData> showingSections() {
-    return categoryData.asMap().entries.map((entry) {
-      int index = entry.key;
-      var cat = entry.value;
-      final isTouched = index == touchedIndex;
-      final fontSize = isTouched ? 16.0 : 12.0;
-      final radius = isTouched ? 55.0 : 45.0;
-      const shadows = [Shadow(color: Colors.black, blurRadius: 2)];
-      
-      return PieChartSectionData(
-        color: cat["color"],
-        value: cat["percent"].toDouble(),
-        title: isTouched ? '${cat["percent"]}%' : '',
-        radius: radius,
-        titleStyle: TextStyle(
-          fontSize: fontSize,
-          fontWeight: FontWeight.bold,
-          color: TColor.white,
-          shadows: shadows,
-        ),
-      );
-    }).toList();
+  // ==========================================================
+  // 1️⃣ Expense Breakdown Pie Chart
+  // ==========================================================
+
+  Widget _buildExpensePieChart() {
+    return FutureBuilder(
+      future: _service.getExpenseByCategory(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const CircularProgressIndicator();
+        }
+
+        final data = snapshot.data as Map<String, double>;
+
+        if (data.isEmpty) {
+          return _emptyCard("No expense data available");
+        }
+
+        // compute total from transactions data
+        final total = data.values.fold<double>(0, (sum, x) => sum + x);
+        int colorIndex = 0;
+        final sections = data.entries.map((e) {
+          final percent = total > 0 ? e.value / total * 100 : 0;
+          final section = PieChartSectionData(
+            value: e.value,
+            title:
+                "₹${e.value.toStringAsFixed(0)}\n${percent.toStringAsFixed(1)}%",
+            radius: 60,
+            color: _getCategoryColor(colorIndex),
+            titleStyle: TextStyle(
+              fontSize: 10,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          );
+          colorIndex++;
+          return section;
+        }).toList();
+
+        return _cardWrapper(
+          title: "Expense Breakdown",
+          child: Column(
+            children: [
+              SizedBox(
+                height: 220,
+                child: PieChart(
+                  PieChartData(
+                    sectionsSpace: 2,
+                    centerSpaceRadius: 40,
+                    sections: sections,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              _buildCategoryLegend(data),
+            ],
+          ),
+        );
+      },
+    );
   }
 
-  Widget _buildCategoryItem({
-    required Color color, 
-    required String title, 
-    required double amount,
-    required int percent,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-        margin: const EdgeInsets.only(bottom: 5),
-        decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.15) : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-          border: isSelected ? Border.all(color: color.withOpacity(0.5)) : null,
-        ),
-        child: Row(
+  // ==========================================================
+  // 2️⃣ Monthly Spending Bar Chart
+  // ==========================================================
+
+  Widget _buildMonthlyBarChart() {
+    return FutureBuilder(
+      future: _service.getMonthlySpending(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const CircularProgressIndicator();
+        }
+
+        final data = snapshot.data as Map<int, double>;
+
+        if (data.isEmpty) {
+          return _emptyCard("No monthly data available");
+        }
+
+        final bars = data.entries.map((e) {
+          return BarChartGroupData(
+            x: e.key,
+            barRods: [
+              BarChartRodData(
+                toY: e.value,
+                width: 16,
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ],
+          );
+        }).toList();
+
+        // determine max value to help interval calculations
+        final maxY = data.values.fold<double>(
+          0,
+          (prev, x) => x > prev ? x : prev,
+        );
+        final interval = (maxY / 5).ceilToDouble();
+
+        return _cardWrapper(
+          title: "Monthly Spending",
+          child: SizedBox(
+            height: 250,
+            child: BarChart(
+              BarChartData(
+                borderData: FlBorderData(show: false),
+                gridData: FlGridData(show: false),
+                barGroups: bars,
+                titlesData: FlTitlesData(
+                  show: true,
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        const months = [
+                          '',
+                          'Jan',
+                          'Feb',
+                          'Mar',
+                          'Apr',
+                          'May',
+                          'Jun',
+                          'Jul',
+                          'Aug',
+                          'Sep',
+                          'Oct',
+                          'Nov',
+                          'Dec',
+                        ];
+                        final idx = value.toInt();
+                        String text = '';
+                        if (idx >= 1 && idx <= 12) {
+                          text = months[idx];
+                        }
+                        return SideTitleWidget(
+                          meta: meta,
+                          child: Text(
+                            text,
+                            style: TextStyle(color: TColor.white, fontSize: 10),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 40,
+                      interval: interval,
+                      getTitlesWidget: (value, meta) {
+                        return Text(
+                          '₹${value.toInt()}',
+                          style: TextStyle(color: TColor.white, fontSize: 10),
+                        );
+                      },
+                    ),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ==========================================================
+  // 3️⃣ Income vs Expense Chart
+  // ==========================================================
+
+  Widget _buildIncomeVsExpenseChart() {
+    return FutureBuilder(
+      future: _service.getIncomeVsExpense(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const CircularProgressIndicator();
+        }
+
+        final data = snapshot.data as Map<String, double>;
+
+        if (data.values.every((e) => e == 0)) {
+          return _emptyCard("No income/expense data available");
+        }
+
+        final total = data.values.fold<double>(0, (s, x) => s + x);
+        int colorIndex = 0;
+        final sections = data.entries.map((e) {
+          final percent = total > 0 ? e.value / total * 100 : 0;
+          final section = PieChartSectionData(
+            value: e.value,
+            title:
+                "₹${e.value.toStringAsFixed(0)}\n${percent.toStringAsFixed(1)}%",
+            radius: 60,
+            color: _getCategoryColor(colorIndex),
+            titleStyle: TextStyle(
+              fontSize: 10,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          );
+          colorIndex++;
+          return section;
+        }).toList();
+
+        return _cardWrapper(
+          title: "Income vs Expense",
+          child: Column(
+            children: [
+              SizedBox(
+                height: 220,
+                child: PieChart(
+                  PieChartData(
+                    sectionsSpace: 2,
+                    centerSpaceRadius: 40,
+                    sections: sections,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              _buildCategoryLegend(data),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ==========================================================
+  // 4️⃣ Category Analytics List
+  // ==========================================================
+
+  Widget _buildCategoryAnalytics() {
+    return FutureBuilder(
+      future: _service.getCategoryAnalytics(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const CircularProgressIndicator();
+        }
+
+        final data = snapshot.data as List<Map<String, dynamic>>;
+
+        if (data.isEmpty) {
+          return _emptyCard("No category analytics available");
+        }
+
+        return _cardWrapper(
+          title: "Category Analytics",
+          child: ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: data.length,
+            itemBuilder: (context, index) {
+              return ListTile(
+                title: Text(
+                  data[index]['category'],
+                  style: TextStyle(color: TColor.white),
+                ),
+                trailing: Text(
+                  "₹ ${data[index]['amount'].toStringAsFixed(2)}",
+                  style: TextStyle(color: TColor.secondary),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  // ==========================================================
+  // UI Helpers
+  // ==========================================================
+
+  Color _getCategoryColor(int index) {
+    // All colors are full-bright (at least one channel = 0xFF) to match pure red brightness
+    final colors = [
+      const Color(0xFFFF0000), // Pure Red
+      const Color(0xFF00FF00), // Pure Green
+      const Color(0xFF0000FF), // Pure Blue
+      const Color(0xFFFFFF00), // Yellow
+      const Color(0xFFFF00FF), // Magenta
+      const Color(0xFF00FFFF), // Cyan
+      const Color(0xFFFFA500), // Orange
+      const Color(0xFF8000FF), // Purple
+      const Color(0xFF00FF7F), // Spring Green
+      const Color(0xFFFF1493), // Deep Pink
+      const Color(0xFF1E90FF), // Dodger Blue
+      const Color(0xFFADFF2F), // Green Yellow
+    ];
+    return colors[index % colors.length];
+  }
+
+  Widget _buildCategoryLegend(Map<String, double> data) {
+    final categories = data.keys.toList();
+    final total = data.values.fold<double>(0, (s, x) => s + x);
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: List.generate(categories.length, (index) {
+        final key = categories[index];
+        final amount = data[key] ?? 0;
+        final percent = total > 0 ? amount / total * 100 : 0;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 12,
-              height: 12,
+              width: 16,
+              height: 16,
               decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(3),
+                color: _getCategoryColor(index),
+                borderRadius: BorderRadius.circular(4),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  color: TColor.white,
-                  fontSize: 14,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                ),
-              ),
-            ),
+            const SizedBox(width: 8),
             Text(
-              "₹${amount.toStringAsFixed(0)}",
+              "$key – ₹${amount.toStringAsFixed(0)} (${percent.toStringAsFixed(1)}%)",
               style: TextStyle(
                 color: TColor.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                "$percent%",
-                style: TextStyle(
-                  color: color,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
-        ),
+        );
+      }),
+    );
+  }
+
+  Widget _cardWrapper({required String title, required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: TColor.gray80,
+        borderRadius: BorderRadius.circular(20),
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: TColor.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 15),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _emptyCard(String message) {
+    return _cardWrapper(
+      title: "Analytics",
+      child: Text(message, style: TextStyle(color: TColor.gray30)),
     );
   }
 }

@@ -33,12 +33,12 @@ class _MainTabViewState extends State<MainTabView> {
       body: PageView(
         controller: controller,
         physics: const NeverScrollableScrollPhysics(),
-        children: const [
-          HomeView(),
-          ExpenseView(),
-          BudgetView(),
-          AnalyticsView(),
-          ProfileView(),
+        children: [
+          const HomeView(),
+          const ExpenseView(),
+          const BudgetView(),
+          const AnalyticsScreen(),
+          const ProfileView(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -107,7 +107,13 @@ class _MainTabViewState extends State<MainTabView> {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: Text("OK", style: TextStyle(color: TColor.secondary, fontWeight: FontWeight.bold)),
+                    child: Text(
+                      "OK",
+                      style: TextStyle(
+                        color: TColor.secondary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
