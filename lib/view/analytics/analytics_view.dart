@@ -325,11 +325,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final colors = [
       const Color(0xFFFF0000), // Pure Red
       const Color(0xFF00FF00), // Pure Green
-      const Color(0xFF0000FF), // Pure Blue
+      const Color.fromARGB(255, 219, 10, 104), // Pure Blue
       const Color(0xFFFFFF00), // Yellow
       const Color(0xFFFF00FF), // Magenta
       const Color(0xFF00FFFF), // Cyan
-      const Color(0xFFFFA500), // Orange
+      const Color.fromARGB(255, 232, 5, 5), // Orange
       const Color(0xFF8000FF), // Purple
       const Color(0xFF00FF7F), // Spring Green
       const Color(0xFFFF1493), // Deep Pink
