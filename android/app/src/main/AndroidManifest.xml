@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- SMS permissions for bank transaction auto-detection -->
+    <uses-permission android:name="android.permission.RECEIVE_SMS"/>
+    <uses-permission android:name="android.permission.READ_SMS"/>
     <application
         android:label="kash"
         android:name="${applicationName}"
@@ -30,6 +33,16 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Notification Listener Service for GPay/payment app notification detection -->
+        <service
+            android:name="notification.listener.service.NotificationListener"
+            android:exported="true"
+            android:label="Kash Notification Listener"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

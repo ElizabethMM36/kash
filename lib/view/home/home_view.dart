@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:kash/common/color_extension.dart';
 import 'package:kash/view/add_transaction/add_transaction_view.dart';
@@ -5,6 +7,9 @@ import 'package:kash/view/split_expense/split_expense_view.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:kash/services/transaction_service.dart';
+import 'package:kash/services/sms_service.dart';
+import 'package:kash/services/budget_service.dart';
+import 'package:kash/services/notification_service.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -13,7 +18,7 @@ class HomeView extends StatefulWidget {
   State<HomeView> createState() => _HomeViewState();
 }
 
-class _HomeViewState extends State<HomeView> {
+class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
   String userName = "Loading...";
   double monthlyIncome = 0;
   double totalExpenses = 0;
@@ -21,6 +26,10 @@ class _HomeViewState extends State<HomeView> {
   double monthlyExpenses = 0;
   double monthlyIncomeTotal = 0;
   final TransactionService _transactionService = TransactionService();
+  final SmsService _smsService = SmsService();
+  final BudgetService _budgetService = BudgetService();
+  final NotificationService _notificationService = NotificationService();
+  List<String> _availableCategories = [];
 
   void loadUserData() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -171,7 +180,536 @@ class _HomeViewState extends State<HomeView> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     loadUserData();
+    _initSmsListener();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _categorySub?.cancel();
+    super.dispose();
+  }
+
+  StreamSubscription? _categorySub;
+
+  /// Called when app comes back to foreground — re-poll inbox
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      debugPrint('📩 App resumed — checking SMS inbox');
+      _pollSmsInbox();
+    }
+  }
+
+  /// Initialize SMS permission + start inbox polling + live listener
+  void _initSmsListener() async {
+    // Load categories in background for use in dialog
+    _categorySub = _budgetService.getCategoryNames().listen((names) {
+      if (mounted) {
+        setState(() => _availableCategories = names);
+      }
+    });
+
+    final granted = await _smsService.requestSmsPermission();
+    if (!granted) {
+      debugPrint('📩 SMS permission denied');
+      return;
+    }
+
+    // Also try live listener (works on some devices)
+    _smsService.listenToIncomingSms(
+      onDetected: (SmsTransaction tx) {
+        if (mounted) _showSmsConfirmDialog(tx);
+      },
+    );
+
+    // Poll inbox immediately on start
+    _pollSmsInbox();
+
+    // Start notification listener for GPay/payment apps
+    _initNotificationListener();
+  }
+
+  /// Initialize GPay/payment app notification listener
+  void _initNotificationListener() async {
+    final hasPermission = await _notificationService.hasPermission();
+    if (!hasPermission) {
+      // Show a one-time dialog asking user to grant notification access
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: TColor.gray80,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                Icon(Icons.notifications_active, color: TColor.secondary),
+                const SizedBox(width: 10),
+                Text('Enable GPay Detection',
+                    style: TextStyle(color: TColor.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: Text(
+              'To auto-detect Google Pay, PhonePe & Paytm transactions, allow Kash to read notifications.\n\nThis is read-only — no payments can be made.',
+              style: TextStyle(color: TColor.gray30, fontSize: 13, height: 1.5),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Later', style: TextStyle(color: TColor.gray30)),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  await _notificationService.requestPermission();
+                  // Start listener after permission (user must go to Settings and come back)
+                  Future.delayed(const Duration(seconds: 3), () {
+                    if (mounted) _startNotificationListener();
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: TColor.secondary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text('Allow', style: TextStyle(color: TColor.primary, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
+      }
+    } else {
+      _startNotificationListener();
+    }
+  }
+
+  void _startNotificationListener() {
+    _notificationService.startListening(
+      onDetected: (NotificationTransaction tx) {
+        if (mounted) _showNotificationConfirmDialog(tx);
+      },
+    );
+    debugPrint('🔔 Notification listener started');
+  }
+
+  /// Show SMS-style confirm dialog for payment notifications
+  void _showNotificationConfirmDialog(NotificationTransaction tx) {
+    String selectedCategory = _availableCategories.isNotEmpty
+        ? _availableCategories.first
+        : 'Auto-detected';
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: TColor.gray80,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  color: tx.isCredit
+                      ? Colors.greenAccent.withOpacity(0.15)
+                      : Colors.redAccent.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.notifications_active,
+                  color: tx.isCredit ? Colors.greenAccent : Colors.redAccent,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text('${tx.appName} Detected',
+                    style: TextStyle(color: TColor.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: tx.isCredit
+                      ? Colors.greenAccent.withOpacity(0.1)
+                      : Colors.redAccent.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: tx.isCredit
+                        ? Colors.greenAccent.withOpacity(0.3)
+                        : Colors.redAccent.withOpacity(0.3),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      tx.isCredit ? '🟢  Money Received' : '🔴  Money Sent',
+                      style: TextStyle(
+                        color: tx.isCredit ? Colors.greenAccent : Colors.redAccent,
+                        fontSize: 13, fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text('₹ ${_formatAmount(tx.amount)}',
+                        style: TextStyle(color: TColor.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: TColor.gray60.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  tx.rawText.length > 120 ? '${tx.rawText.substring(0, 120)}...' : tx.rawText,
+                  style: TextStyle(color: TColor.gray30, fontSize: 11, height: 1.4),
+                ),
+              ),
+              if (!tx.isCredit && _availableCategories.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text('Category', style: TextStyle(color: TColor.gray30, fontSize: 12)),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: TColor.gray60.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: selectedCategory,
+                      isExpanded: true,
+                      dropdownColor: TColor.gray80,
+                      icon: Icon(Icons.arrow_drop_down, color: TColor.white),
+                      style: TextStyle(color: TColor.white, fontSize: 14),
+                      items: _availableCategories.map((cat) =>
+                          DropdownMenuItem(value: cat, child: Text(cat))).toList(),
+                      onChanged: (val) {
+                        if (val != null) setDialogState(() => selectedCategory = val);
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Ignore', style: TextStyle(color: TColor.gray30)),
+            ),
+            OutlinedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                showModalBottomSheet(
+                  context: context,
+                  backgroundColor: Colors.transparent,
+                  isScrollControlled: true,
+                  builder: (_) => AddTransactionView(
+                    prefilledAmount: tx.amount,
+                    prefilledIsDebit: !tx.isCredit,
+                  ),
+                );
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: TColor.secondary,
+                side: BorderSide(color: TColor.secondary.withOpacity(0.5)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Edit'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                try {
+                  final now = DateTime.now();
+                  final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+                  await _transactionService.addTransaction(
+                    amount: tx.amount,
+                    category: tx.isCredit ? 'Income' : (selectedCategory.isNotEmpty ? selectedCategory : 'Auto-detected'),
+                    date: dateStr,
+                    note: 'Auto-detected via ${tx.appName}',
+                    isIncome: tx.isCredit,
+                  );
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('✅ ₹${_formatAmount(tx.amount)} ${tx.isCredit ? 'income' : 'expense'} saved from ${tx.appName}!'),
+                        backgroundColor: tx.isCredit ? Colors.green : Colors.redAccent,
+                      ),
+                    );
+                    _loadTotalExpenses();
+                  }
+                } catch (e) {
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: tx.isCredit ? Colors.green : Colors.redAccent,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Confirm', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Read SMS inbox and show dialog for any new bank transactions
+  void _pollSmsInbox() async {
+    await _smsService.checkInboxForNewBankSms(
+      onDetected: (SmsTransaction tx) {
+        if (mounted) {
+          _showSmsConfirmDialog(tx);
+        }
+      },
+    );
+  }
+
+  /// Show a confirmation popup when a bank SMS is detected
+  void _showSmsConfirmDialog(SmsTransaction tx) {
+    String selectedCategory = _availableCategories.isNotEmpty
+        ? _availableCategories.first
+        : 'Auto-detected';
+    bool isDebit = tx.isDebit;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: TColor.gray80,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isDebit
+                      ? Colors.redAccent.withOpacity(0.15)
+                      : Colors.greenAccent.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.sms_outlined,
+                  color: isDebit ? Colors.redAccent : Colors.greenAccent,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'SMS Detected',
+                style: TextStyle(
+                  color: TColor.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Amount chip
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: isDebit
+                      ? Colors.redAccent.withOpacity(0.1)
+                      : Colors.greenAccent.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isDebit
+                        ? Colors.redAccent.withOpacity(0.3)
+                        : Colors.greenAccent.withOpacity(0.3),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      isDebit ? '🔴  Expense Detected' : '🟢  Income Detected',
+                      style: TextStyle(
+                        color: isDebit ? Colors.redAccent : Colors.greenAccent,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '₹ ${_formatAmount(tx.amount)}',
+                      style: TextStyle(
+                        color: TColor.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              // SMS preview
+              Text(
+                'From: ${tx.senderAddress}',
+                style: TextStyle(color: TColor.gray30, fontSize: 11),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: TColor.gray60.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  tx.rawSms.length > 120
+                      ? '${tx.rawSms.substring(0, 120)}...'
+                      : tx.rawSms,
+                  style: TextStyle(
+                    color: TColor.gray30,
+                    fontSize: 11,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+              // Category dropdown (debit only)
+              if (isDebit && _availableCategories.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Text(
+                  'Category',
+                  style: TextStyle(color: TColor.gray30, fontSize: 12),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: TColor.gray60.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: selectedCategory,
+                      isExpanded: true,
+                      dropdownColor: TColor.gray80,
+                      icon: Icon(Icons.arrow_drop_down, color: TColor.white),
+                      style: TextStyle(color: TColor.white, fontSize: 14),
+                      items: _availableCategories.map((cat) {
+                        return DropdownMenuItem<String>(
+                          value: cat,
+                          child: Text(cat),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() => selectedCategory = val);
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          actions: [
+            // Ignore button
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                'Ignore',
+                style: TextStyle(color: TColor.gray30),
+              ),
+            ),
+            // Edit button – opens AddTransactionView with pre-filled data
+            OutlinedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                showModalBottomSheet(
+                  context: context,
+                  backgroundColor: Colors.transparent,
+                  isScrollControlled: true,
+                  builder: (_) => AddTransactionView(
+                    prefilledAmount: tx.amount,
+                    prefilledIsDebit: tx.isDebit,
+                  ),
+                );
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: TColor.secondary,
+                side: BorderSide(color: TColor.secondary.withOpacity(0.5)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Edit'),
+            ),
+            // Confirm button
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                try {
+                  final now = DateTime.now();
+                  final dateStr =
+                      '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+                  await _transactionService.addTransaction(
+                    amount: tx.amount,
+                    category: isDebit
+                        ? (selectedCategory.isNotEmpty
+                            ? selectedCategory
+                            : 'Auto-detected')
+                        : 'Income',
+                    date: dateStr,
+                    note: 'Auto-detected via SMS',
+                    isIncome: !isDebit,
+                  );
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          '✅ ₹${_formatAmount(tx.amount)} ${isDebit ? "expense" : "income"} saved!',
+                        ),
+                        backgroundColor: isDebit ? Colors.redAccent : Colors.green,
+                      ),
+                    );
+                    _loadTotalExpenses();
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error saving: $e')),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isDebit ? Colors.redAccent : Colors.green,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Confirm',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   // Helper to get category color

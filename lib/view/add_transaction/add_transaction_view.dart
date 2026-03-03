@@ -7,7 +7,14 @@ import 'package:kash/services/transaction_service.dart';
 import 'dart:async';
 
 class AddTransactionView extends StatefulWidget {
-  const AddTransactionView({super.key});
+  final double? prefilledAmount;
+  final bool? prefilledIsDebit;
+
+  const AddTransactionView({
+    super.key,
+    this.prefilledAmount,
+    this.prefilledIsDebit,
+  });
 
   @override
   State<AddTransactionView> createState() => _AddTransactionViewState();
@@ -32,6 +39,13 @@ class _AddTransactionViewState extends State<AddTransactionView> {
   void initState() {
     super.initState();
     _loadCategories();
+    // Pre-fill from SMS if provided
+    if (widget.prefilledAmount != null) {
+      txtAmount.text = widget.prefilledAmount!.toStringAsFixed(2);
+    }
+    if (widget.prefilledIsDebit != null) {
+      isDebit = widget.prefilledIsDebit!;
+    }
   }
 
   void _loadCategories() {
