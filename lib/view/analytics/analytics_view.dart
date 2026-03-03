@@ -320,7 +320,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   // ==========================================================
 
   Color _getCategoryColor(int index) {
-    // All colors are full-bright (at least one channel = 0xFF) to match pure red brightness
+    // original palette (very bright) – we'll mute them by mixing with our gray
+    // background color so the charts aren't glaring.
     final colors = [
       const Color(0xFFFF0000), // Pure Red
       const Color(0xFF00FF00), // Pure Green
@@ -335,7 +336,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       const Color(0xFF1E90FF), // Dodger Blue
       const Color(0xFFADFF2F), // Green Yellow
     ];
-    return colors[index % colors.length];
+    Color base = colors[index % colors.length];
+    // mix 30% gray and reduce opacity slightly to tone down brightness
+    return Color.lerp(base, TColor.gray, 0.3)!.withOpacity(0.75);
   }
 
   Widget _buildCategoryLegend(Map<String, double> data) {
