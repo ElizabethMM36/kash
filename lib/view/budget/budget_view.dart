@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kash/common/color_extension.dart';
 import 'package:kash/services/budget_service.dart';
+import 'package:kash/services/local_notification_service.dart';
 import 'package:kash/view/budget/add_category_dialog.dart';
 import 'dart:async';
 
@@ -56,6 +57,12 @@ class _BudgetViewState extends State<BudgetView> {
                 tempBudgets = List.from(budgets);
               }
             });
+
+            // 🔔 Check budget alerts whenever data updates
+            LocalNotificationService().checkBudgetAlerts(
+              budgets: data,
+              monthlyIncome: monthlyIncome,
+            );
           }
         },
         onError: (e) {

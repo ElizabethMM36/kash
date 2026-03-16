@@ -10,6 +10,7 @@ import 'package:kash/services/transaction_service.dart';
 import 'package:kash/services/sms_service.dart';
 import 'package:kash/services/budget_service.dart';
 import 'package:kash/services/notification_service.dart';
+import 'package:kash/services/local_notification_service.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -183,6 +184,14 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     loadUserData();
     _initSmsListener();
+    _checkMonthlyReset();
+  }
+
+  /// Show a notification on the 1st day of each month
+  void _checkMonthlyReset() {
+    if (DateTime.now().day == 1) {
+      LocalNotificationService().showMonthlyReset();
+    }
   }
 
   @override

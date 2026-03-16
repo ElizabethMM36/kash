@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:telephony/telephony.dart';
+import 'package:telephony_fix/telephony.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Represents a detected bank transaction from an SMS

@@ -4,11 +4,17 @@ import 'package:kash/common/color_extension.dart';
 import 'package:kash/view/login/welcome_view.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:kash/view/main_tab/main_tab_view.dart';
+import 'package:kash/services/local_notification_service.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Initialize local notification service
+  await LocalNotificationService().init();
+  await LocalNotificationService().scheduleDailyReminder();
+  await LocalNotificationService().scheduleWeeklySummaryTimer();
 
   runApp(const MyApp());
 }
